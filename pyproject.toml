@@ -1,0 +1,27 @@
+[project]
+name = "consultation-ai"
+version = "0.1.0"
+description = "AI Worker for Consultation Records"
+authors = ["Team Sangbu3jo <team@example.com>"]
+requires-python = "^3.12"
+dependencies = [
+    "fastapi[standard] (>=0.131.0,<0.132.0)",
+    "sqlmodel (>=0.0.37,<0.0.38)",
+    "aiomysql (>=0.3.2,<0.4.0)",
+    "cryptography (>=46.0.5,<47.0.0)",
+    "aiokafka (>=0.13.0,<0.14.0)",
+    "langchain-openai (>=1.1.10,<2.0.0)",
+    "langchain-elasticsearch (>=1.0.0,<2.0.0)",
+    "loguru (>=0.7.3,<0.8.0)",
+    "openai (>=2.21.0,<3.0.0)",
+    "pydantic-settings (>=2.13.1,<3.0.0)",
+    "instructor (>=1.14.5,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false

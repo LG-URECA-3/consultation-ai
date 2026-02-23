@@ -1,0 +1,22 @@
+# 1. 가상환경 및 로컬 환경변수
+.venv/
+.env
+
+# 2. 파이썬 캐시 및 컴파일 파일
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 3. IDE 설정
+.vscode/
+.idea/
+
+# 4. 도구 및 테스트 캐시
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# 5. 테스트 커버리지 결과
+.coverage
+.coverage.*
+htmlcov/
