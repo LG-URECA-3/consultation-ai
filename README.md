@@ -28,7 +28,6 @@ consultation-ai/
 * Python 3.12+
 * Poetry (Dependency Management)
 ```
-1. Poetry 설치
 # Windows
 (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
 
