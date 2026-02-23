@@ -68,7 +68,7 @@ docker-compose up -d
 ### 4. 가상 환경 활성화 및 전환
 터미널을 가상환경으로 전환합니다.
 ```
-poetry shell
+.\.venv\Scripts\Activate.ps1
 ```
 
 ### 5. 연결 테스트

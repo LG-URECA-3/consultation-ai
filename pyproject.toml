@@ -2,7 +2,9 @@
 name = "consultation-ai"
 version = "0.1.0"
 description = "AI Worker for Consultation Records"
-authors = ["Team Sangbu3jo <team@example.com>"]
+authors = [
+    {name="Team Sangbu3jo", email="team@example.com>"}
+]
 requires-python = "^3.12"
 dependencies = [
     "fastapi[standard] (>=0.131.0,<0.132.0)",
