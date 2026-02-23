@@ -22,6 +22,7 @@ consultation-ai/
 ├── poetry.lock          # 의존성 고정 파일
 └── pyproject.toml       # 프로젝트 빌드 설정 및 의존성 관리
 ```
+<br>
 
 ## 개발 환경 준비 (Prerequisites)
 > 프로젝트 실행을 위해 설치되어야 합니다.
@@ -37,6 +38,7 @@ curl -sSL https://install.python-poetry.org | python3 -
 *설치 후 터미널을 재실행하여 `poetry --version`이 뜨는지 확인하세요. 버전 확인 전 환경변수 등록이 필요합니다.*
 
 * Docker Desktop
+<br>
 
 ## 환경 세팅
 ### 1. 의존성 설정/라이브러리 설치
@@ -78,6 +80,7 @@ python -m app.tests.connection_test
 # OpenAI 임베딩 및 벡터 검색 확인
 python -m app.tests.embedding_test
 ```
+<br>
 
 ---
 ## Swagger (API 문서)
@@ -90,6 +93,5 @@ uvicorn app.main:app --reload
 
 서버 실행 후 아래 링크에서 API 문서를 확인할 수 있습니다.
 
-| Swagger UI                                                                     |
-| ------------------------------------------------------------------------------ |
-| [http://localhost:8000/docs](http://localhost:8000/docs) |
+| Swagger UI                                                                     |  [http://localhost:8000/docs](http://localhost:8000/docs) |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------- |
