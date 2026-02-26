@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlmodel import SQLModel
 
+from app.api.routes.consultation_histories import router as consultation_histories_router
 from app.core.infrastructure import engine
 
 # 1. Lifespan 설정
@@ -24,6 +25,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan
 )
+
+app.include_router(consultation_histories_router)
 
 # 3. 기본 헬스체크 엔드포인트
 @app.get("/health")
