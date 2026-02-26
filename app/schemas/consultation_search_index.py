@@ -43,7 +43,7 @@ class ConsultationSearchIndex(SQLModel):
     "customer_id": 101,
     "agent_id": 55,
     "channel_code": "CHAT",
-    "category_code": "BILLING",
+    "product_line_code": "MOBILE",
     "final_result_code": "DONE",
     "started_at": "2026-02-18T14:00:00",
     "ended_at": "2026-02-18T14:15:00"

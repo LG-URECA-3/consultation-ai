@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from sqlmodel import SQLModel
 
 from app.core.infrastructure import engine
+from app.api.es_index import router as es_index_router
 
 # 1. Lifespan 설정
 @asynccontextmanager
@@ -25,7 +26,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# 3. 기본 헬스체크 엔드포인트
+# 3. 라우터 등록
+app.include_router(es_index_router)
+
+# 4. 기본 헬스체크 엔드포인트
 @app.get("/health")
 async def health_check():
     """앱 상태를 확인하는 헬스체크용 API입니다."""

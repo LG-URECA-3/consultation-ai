@@ -3,7 +3,9 @@ from openai import OpenAI
 from loguru import logger
 from app.core.config import settings
 from app.core.infrastructure import openai_client, es_client
+import pytest
 
+@pytest.mark.asyncio
 async def test_openai_embedding_search():
     index_name = "connection_test_vector"
     test_text = "상담원이 너무 친절해서 기분이 좋네요."

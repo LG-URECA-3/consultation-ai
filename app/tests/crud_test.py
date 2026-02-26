@@ -2,8 +2,10 @@ import asyncio
 from app.core.infrastructure import get_session, engine # 세션 제너레이터 경로에 맞게 수정
 from app.crud import crud_consultation, crud_consultation_message, crud_consultation_record
 from loguru import logger
+import pytest
 
 # 로컬 테스트용 비동기 메인 함수
+@pytest.mark.asyncio
 async def run_test():
     async for session in get_session():
         logger.info("--- 데이터 조회 테스트 시작 ---")
