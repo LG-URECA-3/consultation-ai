@@ -61,7 +61,7 @@ async def setup_index_if_not_exists(index_name: str):
 
 #1. 동일 상담 내용 중복 저장 방지
 
-async def save_consultation_index(consultation_id: int):
+async def fetch_and_index_consultation_history(consultation_id: int):
     """상담 데이터 조회 및 인덱스 저장 함수"""
     es_response = None
 
