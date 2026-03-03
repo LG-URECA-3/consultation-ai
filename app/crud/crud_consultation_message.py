@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from app.models.consultation_messages import ConsultationMessages
+from app.schemas.base.base_consultation_messages import ConsultationMessageBase
 
 async def get_messages_by_consultation_id(session: AsyncSession, consultation_id: int) -> list[ConsultationMessages]:
     """

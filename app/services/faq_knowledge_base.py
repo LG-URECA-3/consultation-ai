@@ -5,9 +5,10 @@ import json
 import re
 import uuid
 from datetime import datetime, timezone
-
+from app.services import embeddings
 from app.core.infrastructure import es_client, openai_client
 from app.schemas.faq_es import FaqDoc
+from app.models.enums import ProductLineCode
 
 FAQ_INDEX = "faq_knowledge_base"
 EMBEDDING_MODEL = "text-embedding-3-small"
@@ -146,18 +147,14 @@ async def create_and_index_faq(
     source_consultation_id: str,
     summary_text: str,
     full_text: str,
-    category: str,
+    product_line_code: ProductLineCode,
 ) -> FaqDoc:
     """LLM으로 question/answer 생성 후 question_vector 임베딩해 faq_knowledge_base에 저장."""
     await ensure_faq_index()
 
     question, answer = _llm_generate_faq_question_answer(summary_text, full_text)
 
-    embed_res = openai_client.embeddings.create(
-        input=question,
-        model=EMBEDDING_MODEL,
-    )
-    question_vector = embed_res.data[0].embedding
+    question_vector = await embeddings.get_embedding(question)
 
     faq_id = "faq_" + uuid.uuid4().hex[:12]
     created_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
@@ -168,7 +165,7 @@ async def create_and_index_faq(
         question=question,
         answer=answer,
         question_vector=question_vector,
-        category=category,
+        category=product_line_code,
         hit_count=1,
         created_at=created_at,
     )

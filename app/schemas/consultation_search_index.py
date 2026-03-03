@@ -1,8 +1,10 @@
 from sqlmodel import SQLModel
 from app.schemas.base.base_consultation_messages import ConsultationMessageBase
 from app.schemas.base.base_consultations import ConsultationBase
+from app.schemas.consultation_history_es import CustomerPersona
+from typing import Optional
 
-class ConsultationSearchIndex(SQLModel):
+class ConsultationHistoryDoc(SQLModel):
     """ES 저장 형식에 따라 작성된 상담 검색 인덱스 스키마"""
     consultation_id: int
 
@@ -13,7 +15,8 @@ class ConsultationSearchIndex(SQLModel):
     # 구조화된 상담 메시지
     messages: list[ConsultationMessageBase]
 
-    # customer_persona: Optional[CustomerPersona] = None
+    keywords: list[str]
+    customer_persona: Optional[CustomerPersona] = None
 
     metadata: ConsultationBase
 
@@ -43,7 +46,7 @@ class ConsultationSearchIndex(SQLModel):
     "customer_id": 101,
     "agent_id": 55,
     "channel_code": "CHAT",
-    "category_code": "BILLING",
+    "product_line_code": "MOBILE",
     "final_result_code": "DONE",
     "started_at": "2026-02-18T14:00:00",
     "ended_at": "2026-02-18T14:15:00"

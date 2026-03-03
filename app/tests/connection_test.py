@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import text
 from pydantic import BaseModel
 from loguru import logger
+import pytest
 
 # 우리가 만든 설정과 인프라 임포트
 from app.core.config import settings
@@ -11,6 +12,7 @@ from app.core.infrastructure import engine, exaone_client, es_client, get_sessio
 class TestResponse(BaseModel):
     message: str
 
+@pytest.mark.asyncio
 async def test_mysql():
     """MySQL 연결 테스트 (SELECT 1)"""
     try:
@@ -20,6 +22,7 @@ async def test_mysql():
     except Exception as e:
         logger.error(f"MySQL 연결 실패: {e}")
 
+@pytest.mark.asyncio
 async def test_elasticsearch():
     """Elasticsearch: 데이터 삽입 및 조회 풀 플로우 테스트"""
     index_name = "connection_test_idx"
@@ -45,6 +48,7 @@ async def test_elasticsearch():
     except Exception as e:
         logger.error(f"Elasticsearch: 플로우 테스트 실패 - {e}")
 
+@pytest.mark.asyncio
 async def test_friendli_ai():
     """Friendli AI(EXAONE) 응답 테스트"""
     try:
@@ -58,6 +62,8 @@ async def test_friendli_ai():
     except Exception as e:
         logger.error(f"Friendli AI 연결 실패: {e}")
 
+
+@pytest.mark.asyncio
 async def run_all_tests():
     logger.info("인프라 연결 테스트를 시작합니다...")
     await asyncio.gather(

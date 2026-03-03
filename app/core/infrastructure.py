@@ -23,6 +23,8 @@ AsyncSessionLocal = sessionmaker(
 # OpenAI
 openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
+client = instructor.from_openai(openai_client)
+
 # Friendli AI (K-EXAONE) + Instructor Wrapper
 exaone_client = instructor.from_openai(
     OpenAI(

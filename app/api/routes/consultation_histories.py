@@ -6,14 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.infrastructure import get_session
 from app.schemas.consultation_history_es import (
-    ConsultationHistoryDoc,
     ConsultationHistorySearchRequest,
     ConsultationHistorySearchResponse,
 )
-from app.services.consultation_history_indexer import (
-    build_and_index_consultation_history,
+from app.services.post_processor import (
+    post_processing,
 )
 from app.services.consultation_history_search import search_by_summary
+from app.schemas.consultation_search_index import ConsultationHistoryDoc
 
 router = APIRouter(prefix="/consultation-histories", tags=["consultation-histories"])
 
@@ -34,7 +34,7 @@ async def index_consultation_to_es(
     consultation_id: int,
     db: AsyncSession = Depends(get_db),
 ) -> ConsultationHistoryDoc:
-    doc = await build_and_index_consultation_history(db, consultation_id)
+    doc = await post_processing(db, consultation_id)
     if doc is None:
         raise HTTPException(status_code=404, detail="Consultation not found")
     return doc

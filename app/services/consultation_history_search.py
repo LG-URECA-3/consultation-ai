@@ -6,8 +6,9 @@ from app.schemas.consultation_history_es import (
     ConsultationHistorySearchHit,
     ConsultationHistorySearchHitMetadata,
 )
+from app.services import embeddings
 
-CONSULTATION_HISTORIES_INDEX = "consultation_histories"
+CONSULTATION_HISTORIES_INDEX = "consultations_histories"
 EMBEDDING_MODEL = "text-embedding-3-small"
 
 
@@ -23,11 +24,7 @@ async def search_by_summary(
         return []
 
     # 1) 요약문 임베딩
-    embed_res = openai_client.embeddings.create(
-        input=summary_text.strip(),
-        model=EMBEDDING_MODEL,
-    )
-    query_vector = embed_res.data[0].embedding
+    query_vector = await embeddings.get_embedding(summary_text.strip())
 
     # 2) ES kNN 검색
     resp = await es_client.search(
