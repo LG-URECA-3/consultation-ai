@@ -7,7 +7,6 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 import asyncio
-
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 load_dotenv()
@@ -167,6 +166,11 @@ async def analyze_and_save():
 
         logger.info("DB 저장 완료")
 
+async def main():
+    try:
+        await analyze_and_save()
+    finally:
+        await engine.dispose()
 
 if __name__ == "__main__":
-    asyncio.run(analyze_and_save())
+    asyncio.run(main())
