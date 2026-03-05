@@ -125,6 +125,7 @@ async def faq_similarity_search(summary_vector: list[float], keywords: list[str]
         logger.error(f"ES 검색 실패: {e}")
         return None
 
+
 async def increment_faq_hit_count(faq_id: str) -> None:
     """기존 FAQ 문서의 hit_count를 1 증가 (ES update script)."""
     try:

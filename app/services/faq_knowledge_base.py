@@ -1,25 +1,10 @@
 """FAQ 인덱스(faq_knowledge_base) 검색, hit_count 갱신, 신규 FAQ 생성 서비스."""
 from __future__ import annotations
 
-import json
-import re
-import uuid
-from datetime import datetime, timezone
-from app.services import embeddings
-from app.core.infrastructure import es_client, openai_client
-from app.schemas.faq_doc import FaqDoc
-from app.models.enums import ProductLineCode
+from app.core.infrastructure import openai_client
 from app.schemas.llm_response import FaqQuestionAnswerResponse
-from app.services.es_faq import setup_faq_index_if_not_exists
 from app.core.infrastructure import client
-from loguru import logger
 
-FAQ_INDEX = "faq_knowledge_base"
-EMBEDDING_MODEL = "text-embedding-3-small"
-EMBEDDING_DIMS = 512
-
-HIGH_SIMILARITY_THRESHOLD = 0.95
-LOW_SIMILARITY_THRESHOLD = 0.6
 
 def llm_same_question(summary_text: str, faq_question: str) -> bool:
     """상담 요약이 FAQ 질문과 같은 질문인지 LLM으로 판별. 동일하면 True."""
@@ -70,49 +55,5 @@ def _llm_generate_faq_question_answer(summary_text: str, full_text: str) -> tupl
         max_tokens=500,
     )
     return resp
-
-
-async def create_and_index_faq(
-    source_consultation_id: str,
-    summary_text: str,
-    full_text: str,
-    product_line_code: ProductLineCode,
-) -> dict:
-    """LLM으로 question/answer 생성 후 question_vector 임베딩해 faq_knowledge_base에 저장."""
-    await setup_faq_index_if_not_exists()
-
-    try:
-        resp = _llm_generate_faq_question_answer(summary_text, full_text)
-        question = resp.question
-        answer = resp.answer
-        logger.info(f"FAQ 생성 완료: {question}, {answer}")
-
-        question_vector = await embeddings.get_embedding(question)
-    except Exception as e:
-        logger.error(f"FAQ 생성 중 OPENAI API 오류 발생: {e}")
-        raise e
-
-    faq_id = "faq_" + uuid.uuid4().hex[:12]
-    created_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
-
-    doc = FaqDoc(
-        faq_id=faq_id,
-        source_consultation_id=source_consultation_id,
-        question=question,
-        answer=answer,
-        question_vector=question_vector,
-        product_line_code=product_line_code.value,
-        hit_count=1,
-        created_at=created_at,
-    )
-    logger.info(f"FAQ 문서 생성 완료: {faq_id}")
-    try:
-        document = doc.model_dump(mode="json")
-        es_response = await es_client.index(index=FAQ_INDEX, id=faq_id, document=document)
-        logger.success(f"FAQ 생성 완료: {dict(es_response)}")
-        return dict(es_response)
-    except Exception as e:
-        logger.error(f"FAQ 생성 중 ES 오류 발생: {e}")
-        raise e
 
 

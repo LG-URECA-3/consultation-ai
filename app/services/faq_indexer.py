@@ -13,14 +13,23 @@
 
 from loguru import logger
 from app.services.faq_knowledge_base import (
-    HIGH_SIMILARITY_THRESHOLD,
-    LOW_SIMILARITY_THRESHOLD,
-    create_and_index_faq,
     llm_same_question,
 )
 from app.services.es_faq import faq_similarity_search, increment_faq_hit_count
 from app.schemas.consultation_history_doc import ConsultationHistoryDoc
+from app.models.enums import ProductLineCode
+from app.services import embeddings
+from app.services.es_faq import setup_faq_index_if_not_exists
+from app.services.faq_knowledge_base import _llm_generate_faq_question_answer
+import uuid
+from datetime import datetime, timezone
+from app.schemas.faq_doc import FaqDoc
+from app.core.infrastructure import es_client
+from app.services.es_faq import FAQ_INDEX
+from loguru import logger
 
+HIGH_SIMILARITY_THRESHOLD = 0.95
+LOW_SIMILARITY_THRESHOLD = 0.6
 
 async def run_faq_from_consultation_doc(doc: ConsultationHistoryDoc) -> None:
     """
@@ -32,7 +41,7 @@ async def run_faq_from_consultation_doc(doc: ConsultationHistoryDoc) -> None:
         summary_text=doc.summary_text,
         summary_vector=doc.summary_vector,
         full_text=doc.full_text,
-        product_line_code=doc.metadata.product_line_code,
+        product_line_code=doc.metadata.product_line_code.value,
         keywords=doc.keywords,
     )
 
@@ -109,3 +118,49 @@ async def get_faq_top1(
         return None, 0.0
 
     return hit, float(hit.get("_score", 0.0))
+
+
+
+
+async def create_and_index_faq(
+    source_consultation_id: str,
+    summary_text: str,
+    full_text: str,
+    product_line_code: ProductLineCode,
+) -> dict:
+    """LLM으로 question/answer 생성 후 question_vector 임베딩해 faq_knowledge_base에 저장."""
+    await setup_faq_index_if_not_exists()
+
+    try:
+        resp = _llm_generate_faq_question_answer(summary_text, full_text)
+        question = resp.question
+        answer = resp.answer
+        logger.info(f"FAQ 생성 완료: {question}, {answer}")
+
+        question_vector = await embeddings.get_embedding(question)
+    except Exception as e:
+        logger.error(f"FAQ 생성 중 OPENAI API 오류 발생: {e}")
+        raise e
+
+    faq_id = "faq_" + uuid.uuid4().hex[:12]
+    created_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+    doc = FaqDoc(
+        faq_id=faq_id,
+        source_consultation_id=source_consultation_id,
+        question=question,
+        answer=answer,
+        question_vector=question_vector,
+        product_line_code=product_line_code.value,
+        hit_count=1,
+        created_at=created_at,
+    )
+    logger.info(f"FAQ 문서 생성 완료: {faq_id}")
+    try:
+        document = doc.model_dump(mode="json")
+        es_response = await es_client.index(index=FAQ_INDEX, id=faq_id, document=document)
+        logger.success(f"FAQ 생성 완료: {dict(es_response)}")
+        return dict(es_response)
+    except Exception as e:
+        logger.error(f"FAQ 생성 중 ES 오류 발생: {e}")
+        raise e
