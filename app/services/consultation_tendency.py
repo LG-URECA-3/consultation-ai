@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # 분석 대상 상담 ID
-consultation_id = 1
+consultation_id = 5
 
 # FastAPI 서버 주소
 ANALYZE_API_URL = "https://laurena-nonorthodox-camren.ngrok-free.dev/analyze"
@@ -125,7 +125,7 @@ async def analyze_and_save():
 
         # 2️⃣ FastAPI 분석 호출
         async with httpx.AsyncClient(
-                timeout=httpx.Timeout(120.0)
+                timeout=None
         ) as client:
             response = await client.post(ANALYZE_API_URL, json=payload)
 
