@@ -13,7 +13,7 @@ from app.services.post_processor import (
     post_processing,
 )
 from app.services.consultation_history_search import search_by_summary
-from app.schemas.consultation_search_index import ConsultationHistoryDoc
+from app.schemas.consultation_history_doc import ConsultationHistoryDoc
 
 router = APIRouter(prefix="/consultation-histories", tags=["consultation-histories"])
 
@@ -34,7 +34,7 @@ async def index_consultation_to_es(
     consultation_id: int,
     db: AsyncSession = Depends(get_db),
 ) -> ConsultationHistoryDoc:
-    doc = await post_processing(db, consultation_id)
+    doc = await post_processing(consultation_id)
     if doc is None:
         raise HTTPException(status_code=404, detail="Consultation not found")
     return doc
@@ -55,3 +55,41 @@ async def search_consultation_histories(
     )
     max_score = max((h.score for h in hits), default=None)
     return ConsultationHistorySearchResponse(hits=hits, max_score=max_score)
+
+
+
+
+
+from pydantic import BaseModel, Field
+from app.services.embeddings import get_embedding
+from app.services.es_faq import faq_similarity_search
+from loguru import logger
+from app.models.enums import ProductLineCode
+
+class FAQSearchTestRequest(BaseModel):
+    summary_text: str = Field(..., description="검색할 요약문 (임베딩 후 kNN 검색에 사용)")
+    product_line_code: ProductLineCode = Field(..., description="상품군 코드")
+    keywords: list[str] = Field(..., description="키워드 리스트")
+
+
+@router.post("/faq-similarity")
+async def test_faq_similarity(request: FAQSearchTestRequest):
+    """
+    현재 구현된 하이브리드 검색 로직을 수동으로 테스트합니다.
+    """
+    try:
+        # Step B: 요약문에 대한 벡터 생성 (512차원)
+        summary_vector = await get_embedding(request.summary_text)
+
+        # Step C: 이전에 작성한 하이브리드 검색 함수 호출
+        # (앞서 정의한 faq_similarity_search 함수가 같은 파일 혹은 import 가능해야 함)
+
+        return await faq_similarity_search(
+            summary_vector=summary_vector,
+            keywords=request.keywords,
+            product_line_code=request.product_line_code.value
+        )
+
+    except Exception as e:
+        logger.error(f"테스트 중 에러 발생: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

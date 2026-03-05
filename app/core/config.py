@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     #Elasticsearch
     ES_URL: str
+    EMBEDDING_DIMS: int = 512
 
     #Kafka
     KAFKA_BOOTSTRAP_SERVERS: str
