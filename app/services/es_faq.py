@@ -118,7 +118,7 @@ async def faq_similarity_search(summary_vector: list[float], keywords: list[str]
             retriever=search_request["retriever"],
             source=search_request["_source"],
         )
-        logger.info(f"ES 검색 완료: {response}")
+        logger.info(f"ES 검색 완료! 최대 유사도: {response['hits']['total']}")
         return response
 
     except Exception as e:
