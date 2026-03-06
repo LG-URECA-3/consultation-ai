@@ -169,7 +169,7 @@ async def create_faq_and_save_kb_to_db(
         )
 
         knowledge_base = KnowledgeBase(
-            faq_id=faq_doc.faq_id,
+            es_doc_id=faq_doc.faq_id,
             product_line_code=product_line_code,
             request=faq_doc.question,
             answer=faq_doc.answer,

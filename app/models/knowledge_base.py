@@ -11,7 +11,7 @@ class KnowledgeBase(SQLModel, table=True):
         sa_column=Column(BigInteger, primary_key=True, autoincrement=True)
     )
 
-    faq_id: Optional[str] = Field(
+    es_doc_id: Optional[str] = Field(
         default=None,
         max_length=55
     )

@@ -23,7 +23,7 @@ async def update_knowledge_base_hit_count_and_last_hit_at(session: AsyncSession,
     try:
         await session.execute(
             update(KnowledgeBase)
-            .where(KnowledgeBase.faq_id == faq_id)
+            .where(KnowledgeBase.es_doc_id == faq_id)
             .values(
                 hit_count=KnowledgeBase.hit_count + 1,
                 last_hit_at=datetime.now(),
