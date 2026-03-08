@@ -32,13 +32,13 @@ app = FastAPI(
 app.include_router(consultation_histories_router)
 
 # 3. 기본 헬스체크 엔드포인트
-@app.get("/health")
+@app.get("/fastapi/health")
 async def health_check():
     """앱 상태를 확인하는 헬스체크용 API입니다."""
     return {"status": "healthy", "message": "Consultation AI 서버가 작동 중입니다!"}
 
 
-@app.get("/health/ready", status_code=status.HTTP_200_OK)
+@app.get("/fastapi/health/ready", status_code=status.HTTP_200_OK)
 async def health_ready():
     """
     Readiness: DB, Elasticsearch, Redis 연결 상태를 검사합니다.
@@ -101,6 +101,6 @@ async def health_ready():
     }
 
 
-@app.get("/")
+@app.get("/fastapi")
 async def root():
     return {"message": "AI 상담 지원 시스템 API에 오신 것을 환영합니다."}
