@@ -31,7 +31,7 @@ SSM_PARAM_TO_ENV: dict[str, str] = {
     f"{SSM_PREFIX}/openai_api_key": "OPENAI_API_KEY",
     f"{SSM_PREFIX}/friendli_token": "FRIENDLI_TOKEN",
     f"{SSM_PREFIX}/db_host": "DB_HOST",
-    f"{SSM_PREFIX}/db_port": "DB_PORT",
+    # f"{SSM_PREFIX}/db_port": "DB_PORT",
     f"{SSM_PREFIX}/db_user": "DB_USER",
     f"{SSM_PREFIX}/db_password": "DB_PASSWORD",
     f"{SSM_PREFIX}/db_name": "DB_NAME",
