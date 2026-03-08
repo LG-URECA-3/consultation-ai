@@ -26,7 +26,10 @@ app = FastAPI(
     title="Consultation AI API",
     description="상담 요약 및 벡터 검색을 제공하는 AI 서비스",
     version="0.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/fastapi/docs",
+    redoc_url="/fastapi/redoc",
+    openapi_url="/fastapi/openapi.json",
 )
 
 app.include_router(consultation_histories_router)
