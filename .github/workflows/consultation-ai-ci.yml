@@ -1,0 +1,52 @@
+name: Consultation AI CI & ECR Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - 'Dockerfile'
+      - '.github/workflows/consultation-ai-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    env:
+      # ECR 리포지토리 이름 (아래 Build 단계에서 registry + repository + tag 로 이미지 URI 조합)
+      ECR_REPOSITORY: consultation-service/fastapi
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image - consultation-ai
+        env:
+          # ECR 주소 구성: registry(로그인 단계 출력) + repository(위 env) + tag(git sha)
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker buildx build --platform linux/arm64 \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            -f Dockerfile . --push
