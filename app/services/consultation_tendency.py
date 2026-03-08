@@ -49,6 +49,11 @@ ORDER BY cm.message_seq;
 # =========================
 # 2️⃣ 분석 결과 저장 SQL
 # =========================
+FETCH_CONSULTATION_IDS_SQL = """
+SELECT consultation_id
+FROM consultations
+WHERE DATE(created_at) = :target_date;
+"""
 INSERT_SQL = """
 INSERT INTO consultation_tendency (
     consultation_id,
@@ -99,11 +104,8 @@ def normalize_enum(value):
         return None
     return value.strip().upper()
 
-async def analyze_and_save():
+async def analyze_and_save(session, consultation_id):
 
-    async with async_session() as session:
-
-        # 1️⃣ 데이터 조회
         result = await session.execute(
             text(FETCH_SQL),
             {"consultation_id": consultation_id}
@@ -112,7 +114,7 @@ async def analyze_and_save():
         rows = result.fetchall()
 
         if not rows:
-            logger.info("고객 메시지 없음")
+            logger.info(f"{consultation_id} 메시지 없음")
             return
 
         customer_id = rows[0][0]
@@ -123,21 +125,15 @@ async def analyze_and_save():
             "customer_messages": customer_messages
         }
 
-        # 2️⃣ FastAPI 분석 호출
-        async with httpx.AsyncClient(
-                timeout=None
-        ) as client:
+        async with httpx.AsyncClient(timeout=None) as client:
             response = await client.post(ANALYZE_API_URL, json=payload)
 
         if response.status_code != 200:
-            logger.error(f"API 호출 실패: {response.text}")
+            logger.error(f"{consultation_id} API 실패")
             return
 
         analysis_result = response.json()
 
-        logger.info("분석 완료")
-
-        # 3️⃣ DB 저장
         vector = analysis_result.get("personality_vector")
         if not isinstance(vector, list) or len(vector) != 6:
             vector = [0, 0, 0, 0, 0, 0]
@@ -158,7 +154,6 @@ async def analyze_and_save():
                 "consultation_summary": analysis_result.get("consultation_summary"),
                 "recommended_strategy": analysis_result.get("recommended_strategy"),
                 "personality_vector": json.dumps(vector),
-                "raw_response": analysis_result.get("raw_response")
             }
         )
 
@@ -167,10 +162,29 @@ async def analyze_and_save():
         logger.info("DB 저장 완료")
 
 async def main():
-    try:
-        await analyze_and_save()
-    finally:
-        await engine.dispose()
+
+    target_date = "2026-03-05"
+
+    async with async_session() as session:
+
+        result = await session.execute(
+            text(FETCH_CONSULTATION_IDS_SQL),
+            {"target_date": target_date}
+        )
+
+        consultation_ids = [row[0] for row in result.fetchall()]
+
+        logger.info(f"{len(consultation_ids)}개 상담 분석 시작")
+
+        for consultation_id in consultation_ids:
+            try:
+                await analyze_and_save(session, consultation_id)
+            except Exception as e:
+                logger.error(f"{consultation_id} 처리 실패 {e}")
+
+        await session.commit()
+
+    await engine.dispose()
 
 if __name__ == "__main__":
     asyncio.run(main())
