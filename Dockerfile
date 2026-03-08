@@ -20,7 +20,7 @@ ENV PATH="${POETRY_HOME}/bin:${PATH}"
 
 # 의존성만 먼저 설치 (캐시 활용)
 COPY pyproject.toml poetry.lock ./
-RUN poetry install --only main --no-root --no-interaction
+RUN poetry install --without dev --no-root --no-interaction
 
 # 애플리케이션 코드
 COPY app ./app
