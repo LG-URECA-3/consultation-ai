@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Poetry 설치 및 설정
-ENV POETRY_VERSION=1.8.4 \
+# Poetry 설치 (로컬과 동일한 2.x 사용 - lock 파일 호환)
+ENV POETRY_VERSION=2.3.2 \
     POETRY_HOME="/opt/poetry" \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=false
@@ -18,9 +18,9 @@ RUN pip install --no-cache-dir "poetry==${POETRY_VERSION}"
 
 ENV PATH="${POETRY_HOME}/bin:${PATH}"
 
-# 의존성만 먼저 설치 (캐시 활용)
+# 의존성만 먼저 설치 (캐시 활용, dev 제외)
 COPY pyproject.toml poetry.lock ./
-RUN poetry install --no-root --no-interaction
+RUN poetry install --without dev --no-root --no-interaction
 
 # 애플리케이션 코드
 COPY app ./app
