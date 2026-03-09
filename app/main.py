@@ -1,22 +1,26 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlmodel import SQLModel
-
+from loguru import logger
+import asyncio
+from app.kafka.consume import consumer
 from app.api.routes.consultation_histories import router as consultation_histories_router
 from app.core.infrastructure import engine
 
 # 1. Lifespan 설정
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # [Startup] 테이블 자동 생성 (hibernate ddl-auto: update와 유사)
-    async with engine.begin() as conn:
-        # models 폴더에 정의된 모든 SQLModel 테이블을 DB에 생성
-        await conn.run_sync(SQLModel.metadata.create_all)
-    
-    yield
-    
-    # [Shutdown] 커넥션 풀 정리
-    await engine.dispose()
+        consumer_task = asyncio.create_task(consumer())
+        logger.info("Kafka Consumer가 백그라운드에서 시작되었습니다.")
+        yield
+        logger.info("Kafka Consumer 종료 중...")
+        await consumer_task.cancel()
+        try:
+            await consumer_task
+        except asyncio.CancelledError:
+            logger.info("Kafka Consumer가 안전하게 종료되었습니다.")
+        finally:
+            await engine.dispose()
 
 # 2. FastAPI 앱 인스턴스 생성
 app = FastAPI(

@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     KAFKA_BOOTSTRAP_SERVERS: str
     KAFKA_CONSUMER_GROUP_ID: str
     KAFKA_AUTO_OFFSET_RESET: str
+    KAFKA_TOPIC: str = "processing-consultation"
+    KAFKA_SESSION_TIMEOUT_MS: int = 30000
 
     @property
     def DATABASE_URL(self) -> str:
