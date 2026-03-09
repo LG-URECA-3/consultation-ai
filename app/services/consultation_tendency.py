@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # 분석 대상 상담 ID
-consultation_id = 5
+# consultation_id = 5
 
 # FastAPI 서버 주소
 ANALYZE_API_URL = "https://laurena-nonorthodox-camren.ngrok-free.dev/analyze"
