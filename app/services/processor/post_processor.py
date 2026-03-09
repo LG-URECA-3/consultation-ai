@@ -1,7 +1,7 @@
 from __future__ import annotations
 from app.schemas.consultation_history_doc import ConsultationHistoryDoc
-from app.services.consultation_history_indexer import fetch_and_index_consultation_history
-from app.services.faq_indexer import run_faq_from_consultation_doc
+from app.services.processor.consultation_history_indexer import fetch_and_index_consultation_history
+from app.services.processor.faq_indexer import run_faq_from_consultation_doc
 from loguru import logger
 
 async def post_processing(

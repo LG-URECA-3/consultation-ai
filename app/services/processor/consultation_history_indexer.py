@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from app.core.infrastructure import es_client
-from app.services import embeddings
+from app.services.common import embeddings
 from app.core.infrastructure import AsyncSessionLocal
 
 from app.core.infrastructure import es_client
@@ -22,8 +22,8 @@ from app.crud.crud_consultation_record import get_record_by_consultation_id
 from app.schemas.consultation_history_es import (
     CustomerPersona,
 )
-from app.services.es_consultation import setup_index_if_not_exists
-from app.services.es_consultation import (
+from app.services.processor.es_consultation import setup_index_if_not_exists
+from app.services.processor.es_consultation import (
     _get_consultation_doc_from_es,
     save_index,
     CONSULTATION_HISTORIES_INDEX

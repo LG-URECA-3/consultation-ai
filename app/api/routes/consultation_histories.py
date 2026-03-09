@@ -9,10 +9,10 @@ from app.schemas.consultation_history_es import (
     ConsultationHistorySearchRequest,
     ConsultationHistorySearchResponse,
 )
-from app.services.post_processor import (
+from app.services.processor.post_processor import (
     post_processing,
 )
-from app.services.consultation_history_search import search_by_summary
+from app.services.processor.consultation_history_search import search_by_summary
 from app.schemas.consultation_history_doc import ConsultationHistoryDoc
 
 router = APIRouter(prefix="/consultation-histories", tags=["consultation-histories"])
@@ -61,8 +61,8 @@ async def search_consultation_histories(
 
 
 from pydantic import BaseModel, Field
-from app.services.embeddings import get_embedding
-from app.services.es_faq import faq_similarity_search
+from app.services.common.embeddings import get_embedding
+from app.services.processor.es_faq import faq_similarity_search
 from loguru import logger
 from app.models.enums import ProductLineCode
 

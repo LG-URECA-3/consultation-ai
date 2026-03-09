@@ -13,14 +13,14 @@
 
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.services.faq_knowledge_base import (
+from app.services.processor.faq_knowledge_base import (
     llm_same_question,
 )
-from app.services.es_faq import faq_similarity_search, increment_faq_hit_count
+from app.services.processor.es_faq import faq_similarity_search, increment_faq_hit_count
 from app.schemas.consultation_history_doc import ConsultationHistoryDoc
-from app.services import embeddings
-from app.services.es_faq import setup_faq_index_if_not_exists
-from app.services.faq_knowledge_base import _llm_generate_faq_question_answer
+from app.services.common import embeddings
+from app.services.processor.es_faq import setup_faq_index_if_not_exists
+from app.services.processor.faq_knowledge_base import _llm_generate_faq_question_answer
 from app.models.kb_search_sync import KbSearchSync
 from app.crud.crud_kb_search_sync import upsert_kb_search_sync
 from app.models.enums import IndexStatus
@@ -28,7 +28,7 @@ import uuid
 from datetime import datetime, timezone
 from app.schemas.faq_doc import FaqDoc
 from app.core.infrastructure import AsyncSessionLocal, es_client
-from app.services.es_faq import FAQ_INDEX
+from app.services.processor.es_faq import FAQ_INDEX
 from app.models.knowledge_base import KnowledgeBase
 from app.crud.crud_knowledge_base import insert_knowledge_base, update_knowledge_base_hit_count_and_last_hit_at
 

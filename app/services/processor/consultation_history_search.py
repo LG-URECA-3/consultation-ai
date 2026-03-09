@@ -6,7 +6,7 @@ from app.schemas.consultation_history_es import (
     ConsultationHistorySearchHit,
     ConsultationHistorySearchHitMetadata,
 )
-from app.services import embeddings
+from app.services.common import embeddings
 
 CONSULTATION_HISTORIES_INDEX = "consultations_histories"
 EMBEDDING_MODEL = "text-embedding-3-small"
