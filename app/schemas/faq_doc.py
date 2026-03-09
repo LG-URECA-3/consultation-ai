@@ -1,7 +1,8 @@
 """Elasticsearch faq_knowledge_base 인덱스 문서 스키마."""
 from typing import Any
-
 from pydantic import BaseModel, Field
+from datetime import datetime
+from app.models.enums import ProductLineCode
 
 
 class FaqDoc(BaseModel):
@@ -12,11 +13,12 @@ class FaqDoc(BaseModel):
     question: str
     answer: str
     question_vector: list[float] = Field(default_factory=list)
-    category: str = ""
+    product_line_code: ProductLineCode
     hit_count: int = 1
-    created_at: str = ""
+    created_at: datetime
 
     model_config = {"extra": "forbid"}
+
 
     def to_es_body(self) -> dict[str, Any]:
         """ES index API body로 직렬화."""
@@ -26,7 +28,7 @@ class FaqDoc(BaseModel):
             "question": self.question,
             "answer": self.answer,
             "question_vector": self.question_vector,
-            "category": self.category,
+            "product_line_code": self.product_line_code.value,
             "hit_count": self.hit_count,
             "created_at": self.created_at,
         }

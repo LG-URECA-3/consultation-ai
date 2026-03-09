@@ -23,21 +23,23 @@ class Settings(BaseSettings):
     FRIENDLI_BASE_URL: str = "https://api.friendli.ai/serverless/v1"
     FRIENDLI_MODEL_ID: str = "LGAI-EXAONE/EXAONE-4.0.1-32B"
 
-    # DB (SSM db_url 사용 시 DB_URL만 설정, 아니면 DB_HOST 등 개별 필드 사용)
-    DB_URL: Optional[str] = None
+    # DB (SSM: db_host, db_port, db_user, db_password, db_name → DATABASE_URL 구성)
     DB_HOST: Optional[str] = None
     DB_PORT: int = 3306
-    DB_USER: str = "root"
-    DB_PASSWORD: str = ""
-    DB_NAME: str = "consultation_db"
+    DB_USER: str = ""  # SSM db_user (운영에서 필수)
+    DB_PASSWORD: str = ""  # SSM db_password
+    DB_NAME: str = "consultation_db"  # SSM db_name (선택)
 
     # Elasticsearch (SSM elasticsearch_uris → ES_URL)
     ES_URL: str = ""
+    EMBEDDING_DIMS: int = 512
 
     # Kafka (SSM kafka_bootstrap_servers)
     KAFKA_BOOTSTRAP_SERVERS: str = ""
     KAFKA_CONSUMER_GROUP_ID: str = "consultation-group"
     KAFKA_AUTO_OFFSET_RESET: str = "earliest"
+    KAFKA_TOPIC: str = "processing-consultation"
+    KAFKA_SESSION_TIMEOUT_MS: int = 30000
 
     # Redis (SSM redis_host, redis_password, 선택)
     REDIS_HOST: Optional[str] = None
@@ -45,18 +47,20 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def check_db_config(self) -> "Settings":
-        if not self.DB_URL and not self.DB_HOST:
+        if not self.DB_HOST or not self.DB_PASSWORD or not self.DB_USER:
             raise ValueError(
-                "Either DB_URL (e.g. from SSM) or DB_HOST (and DB_PASSWORD) must be set"
+                "DB_HOST, DB_USER, DB_PASSWORD must be set (e.g. from SSM: db_host, db_user, db_password)"
             )
         return self
 
     @property
     def DATABASE_URL(self) -> str:
-        if self.DB_URL:
-            return self.DB_URL
+        from urllib.parse import quote_plus
+
+        user = quote_plus(self.DB_USER)
+        password = quote_plus(self.DB_PASSWORD)
         return (
-            f"mysql+aiomysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+            f"mysql+aiomysql://{user}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         )
 
     model_config = SettingsConfigDict(

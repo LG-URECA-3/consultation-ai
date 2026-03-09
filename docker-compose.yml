@@ -2,14 +2,13 @@ name: consultation-infra
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    build: .  # Dockerfile을 사용하여 빌드
     container_name: consultation-elasticsearch
     environment:
-      - node.name=elasticsearch
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.license.self_generated.type=trial
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
     ulimits:
       memlock:
         soft: -1
@@ -17,11 +16,11 @@ services:
     ports:
       - "9200:9200"
     volumes:
-      - es_data:/usr/share/elasticsearch/data
+      - es_data:/usr/share/elasticsearch/data 
     restart: unless-stopped
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.12.0
+    image: docker.elastic.co/kibana/kibana:8.18.0 
     container_name: consultation-kibana
     depends_on:
       - elasticsearch

@@ -1,6 +1,7 @@
 # 요약만 임베딩을 위한 함수
 from app.core.infrastructure import openai_client, client
 from app.schemas.llm_response import SummaryResponse
+from app.core.config import settings
 
 
 async def get_embedding(text: str) -> list[float]:
@@ -8,7 +9,7 @@ async def get_embedding(text: str) -> list[float]:
     return openai_client.embeddings.create(
         input=text,
         model="text-embedding-3-small",
-        dimensions=512
+        dimensions=settings.EMBEDDING_DIMS
     ).data[0].embedding
 
 
