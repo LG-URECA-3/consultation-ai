@@ -6,6 +6,7 @@ from loguru import logger
 
 async def post_processing(
     consultation_id: int,
+    record_id: int
 ) -> ConsultationHistoryDoc | None:
     """후처리 과정의 메인 흐름: 
     Step 1: consultation_id 기준 상담 이력 조회·ES 인덱싱. DB에 상담이 없으면 None 반환.
@@ -15,7 +16,7 @@ async def post_processing(
 
     try:
         # Step 1: 상담 데이터 조회·가공·ES 인덱싱
-        doc = await fetch_and_index_consultation_history(consultation_id)
+        doc = await fetch_and_index_consultation_history(consultation_id, record_id)
         if doc is None:
             return None
 
