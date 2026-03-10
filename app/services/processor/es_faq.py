@@ -38,13 +38,6 @@ async def setup_faq_index_if_not_exists() -> None:
     await es_client.indices.create(index=FAQ_INDEX, body=index_settings)
     logger.info(f"인덱스 '{FAQ_INDEX}' 생성 완료")
 
-async def check_faq_similarity(summary_vector: list[float], keywords: list[str], product_line_code: str):
-    """
-    상담 요약문을 바탕으로 FAQ 인덱스에 유사한 내용이 존재하는지 검색.
-    """
-    return await faq_similarity_search(summary_vector, keywords, product_line_code)
-
-
 
 # es에 유사도 하이브리드 검색 함수
 async def faq_similarity_search(summary_vector: list[float], keywords: list[str], product_line_code: str, k: int = 10):
@@ -75,7 +68,7 @@ async def faq_similarity_search(summary_vector: list[float], keywords: list[str]
                                                     "query": keyword_query, # LLM이 뽑아준 짧은 키워드
                                                     "fields": ["summary_text", "question", "answer"],
                                                     "operator": "or",
-                                                    "minimum_should_match": "50%" # 키워드 중 최소 절반은 맞아야함.
+                                                    # "minimum_should_match": "50%" # 키워드 중 최소 절반은 맞아야함.
                                                 }
                                             }
                                         ],
@@ -98,7 +91,7 @@ async def faq_similarity_search(summary_vector: list[float], keywords: list[str]
                             "knn": {
                                 "field": "question_vector",
                                 "query_vector": summary_vector, # 저장된 요약 임베딩-입력된 요약 임베딩 비교.
-                                "k": 5,
+                                "k": k,
                                 "num_candidates": 50
                             }
                         },

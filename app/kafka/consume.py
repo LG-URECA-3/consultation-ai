@@ -2,7 +2,7 @@ from app.core.config import settings
 from aiokafka import AIOKafkaConsumer
 import json
 from loguru import logger
-from app.services.post_processor import post_processing
+from app.services.processor.post_processor import post_processing
 
 async def setup_kafka_consumer():
     kafka_consumer = AIOKafkaConsumer(

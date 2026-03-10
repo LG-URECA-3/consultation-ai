@@ -1,6 +1,7 @@
 from fastapi import APIRouter
+from app.services.rumtime.runtime_search import runtime_search
 
-router = APIRouter(prefix="/api/v1/consultations/", tags=["runtime-api"])
+router = APIRouter(prefix="/api/v1/consultations", tags=["runtime-api"])
 
 @router.post(
     "/{consultationId}/ai-assist",
