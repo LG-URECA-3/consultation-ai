@@ -58,9 +58,12 @@ ORDER BY cm.message_seq;
 """
 
 FETCH_CONSULTATION_IDS_SQL = """
-SELECT consultation_id
-FROM consultations
-WHERE DATE(created_at) = :target_date;
+SELECT c.consultation_id
+FROM consultations c
+LEFT JOIN consultation_tendency t
+  ON c.consultation_id = t.consultation_id
+WHERE DATE(c.created_at) = :target_date
+AND (t.batch_status IS NULL OR t.batch_status != 'SUCCESS');
 """
 
 INSERT_SQL = """
@@ -108,6 +111,25 @@ ON DUPLICATE KEY UPDATE
     personality_vector = VALUES(personality_vector);
 """
 
+UPSERT_PROCESSING_SQL = """
+INSERT INTO consultation_tendency
+(consultation_id, customer_id, batch_status)
+VALUES (:consultation_id, :customer_id, 'PROCESSING')
+ON DUPLICATE KEY UPDATE
+batch_status = IF(batch_status='SUCCESS','SUCCESS','PROCESSING');
+"""
+
+UPDATE_SUCCESS_SQL = """
+UPDATE consultation_tendency
+SET batch_status='SUCCESS'
+WHERE consultation_id=:consultation_id
+"""
+
+UPDATE_FAILED_SQL = """
+UPDATE consultation_tendency
+SET batch_status='FAILED'
+WHERE consultation_id=:consultation_id
+"""
 
 # =========================
 # util
@@ -172,12 +194,22 @@ async def call_analysis_api(client, consultation_id, messages):
         "customer_messages": messages
     }
 
-    response = await client.post(ANALYZE_API_URL, json=payload)
+    for attempt in range(3):
 
-    if response.status_code != 200:
-        raise Exception(f"API 실패 {consultation_id}")
+        try:
+            response = await client.post(ANALYZE_API_URL, json=payload)
 
-    return response.json()
+            if response.status_code == 200:
+                return response.json()
+
+            logger.warning(f"{consultation_id} API 실패 status={response.status_code}")
+
+        except Exception as e:
+            logger.warning(f"{consultation_id} API 오류 {e}")
+
+        await asyncio.sleep(2)
+
+    raise Exception(f"API 3회 실패 {consultation_id}")
 
 
 # =========================
@@ -215,20 +247,57 @@ async def save_analysis(session, consultation_id, customer_id, analysis_result):
 # 핵심 처리
 # =========================
 
-async def analyze_and_save(session, client, consultation_id):
+async def analyze_and_save(session_factory, client, consultation_id):
 
-    customer_id, messages = await fetch_customer_messages(session, consultation_id)
+    async with session_factory() as session:
 
-    if not messages:
-        logger.info(f"{consultation_id} 메시지 없음")
-        return
+        customer_id, messages = await fetch_customer_messages(session, consultation_id)
 
-    analysis_result = await call_analysis_api(client, consultation_id, messages)
+        if not messages:
+            logger.info(f"{consultation_id} 메시지 없음")
+            return
 
-    await save_analysis(session, consultation_id, customer_id, analysis_result)
+        try:
 
-    logger.info(f"{consultation_id} 분석 완료")
+            # 처리 시작 (UPSERT)
+            await session.execute(
+                text(UPSERT_PROCESSING_SQL),
+                {
+                    "consultation_id": consultation_id,
+                    "customer_id": customer_id
+                }
+            )
 
+            await session.commit()
+
+            # AI 분석
+            analysis_result = await call_analysis_api(client, consultation_id, messages)
+
+            # 분석 결과 저장
+            await save_analysis(session, consultation_id, customer_id, analysis_result)
+
+            # 성공 처리
+            await session.execute(
+                text(UPDATE_SUCCESS_SQL),
+                {"consultation_id": consultation_id}
+            )
+
+            await session.commit()
+
+            logger.info(f"{consultation_id} 분석 완료")
+
+        except Exception as e:
+
+            await session.execute(
+                text(UPDATE_FAILED_SQL),
+                {"consultation_id": consultation_id}
+            )
+
+            await session.commit()
+
+            logger.error(f"{consultation_id} 처리 실패: {e}")
+
+            raise
 
 # =========================
 # main
@@ -248,15 +317,19 @@ async def main():
         async with httpx.AsyncClient(timeout=None) as client:
 
             for consultation_id in consultation_ids:
+
                 try:
-                    await analyze_and_save(session, client, consultation_id)
+                    await analyze_and_save(async_session, client, consultation_id)
+
+                    # 상담 하나 끝날 때마다 commit
+                    await session.commit()
+
                 except Exception as e:
+
+                    await session.commit()  # 실패 상태도 저장
                     logger.error(f"{consultation_id} 처리 실패: {e}")
 
-        await session.commit()
-
     await engine.dispose()
-
 
 # =========================
 # run
