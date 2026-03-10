@@ -2,7 +2,9 @@ import asyncio
 import httpx
 import logging
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 # =========================
 # API

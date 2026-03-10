@@ -4,7 +4,7 @@ from sqlalchemy import text
 # SQL
 # =========================
 
-FETCH_SQL = """
+FETCH_CUSTOMER_MESSAGES_SQL = """
 SELECT c.customer_id, cm.content
 FROM consultations c
 JOIN consultation_messages cm
@@ -23,7 +23,15 @@ WHERE DATE(c.created_at) = :target_date
 AND (t.batch_status IS NULL OR t.batch_status != 'SUCCESS');
 """
 
-INSERT_SQL = """
+UPSERT_PROCESSING_SQL = """
+INSERT INTO consultation_tendency
+(consultation_id, customer_id, batch_status)
+VALUES (:consultation_id, :customer_id, 'PROCESSING')
+ON DUPLICATE KEY UPDATE
+batch_status = IF(batch_status='SUCCESS','SUCCESS','PROCESSING');
+"""
+
+INSERT_ANALYSIS_SQL = """
 INSERT INTO consultation_tendency (
     consultation_id,
     customer_id,
@@ -68,14 +76,6 @@ ON DUPLICATE KEY UPDATE
     personality_vector = VALUES(personality_vector);
 """
 
-UPSERT_PROCESSING_SQL = """
-INSERT INTO consultation_tendency
-(consultation_id, customer_id, batch_status)
-VALUES (:consultation_id, :customer_id, 'PROCESSING')
-ON DUPLICATE KEY UPDATE
-batch_status = IF(batch_status='SUCCESS','SUCCESS','PROCESSING');
-"""
-
 UPDATE_SUCCESS_SQL = """
 UPDATE consultation_tendency
 SET batch_status='SUCCESS'
@@ -88,8 +88,9 @@ SET batch_status='FAILED'
 WHERE consultation_id=:consultation_id
 """
 
+
 # =========================
-# DB 조회
+# Repository Functions
 # =========================
 
 async def fetch_consultation_ids(session, target_date):
@@ -105,7 +106,7 @@ async def fetch_consultation_ids(session, target_date):
 async def fetch_customer_messages(session, consultation_id):
 
     result = await session.execute(
-        text(FETCH_SQL),
+        text(FETCH_CUSTOMER_MESSAGES_SQL),
         {"consultation_id": consultation_id}
     )
 
@@ -118,3 +119,30 @@ async def fetch_customer_messages(session, consultation_id):
     messages = [row[1] for row in rows]
 
     return customer_id, messages
+
+
+async def upsert_processing(session, consultation_id, customer_id):
+
+    await session.execute(
+        text(UPSERT_PROCESSING_SQL),
+        {
+            "consultation_id": consultation_id,
+            "customer_id": customer_id
+        }
+    )
+
+
+async def update_success(session, consultation_id):
+
+    await session.execute(
+        text(UPDATE_SUCCESS_SQL),
+        {"consultation_id": consultation_id}
+    )
+
+
+async def update_failed(session, consultation_id):
+
+    await session.execute(
+        text(UPDATE_FAILED_SQL),
+        {"consultation_id": consultation_id}
+    )

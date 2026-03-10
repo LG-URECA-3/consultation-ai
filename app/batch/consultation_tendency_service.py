@@ -1,8 +1,8 @@
 import json
 import argparse
 from sqlalchemy import text
-from app.batch.consultation_tendency_repository import INSERT_SQL, fetch_customer_messages, UPSERT_PROCESSING_SQL, \
-    UPDATE_SUCCESS_SQL, UPDATE_FAILED_SQL
+
+import app.batch.consultation_tendency_repository as repo
 from app.batch.tendency_api import logger, call_analysis_api
 
 
@@ -38,7 +38,7 @@ async def save_analysis(session, consultation_id, customer_id, analysis_result):
         vector = [0, 0, 0, 0, 0, 0]
 
     await session.execute(
-        text(INSERT_SQL),
+        text(repo.INSERT_ANALYSIS_SQL),
         {
             "consultation_id": consultation_id,
             "customer_id": customer_id,
@@ -65,7 +65,7 @@ async def analyze_and_save(session_factory, client, consultation_id):
 
     async with session_factory() as session:
 
-        customer_id, messages = await fetch_customer_messages(session, consultation_id)
+        customer_id, messages = await repo.fetch_customer_messages(session, consultation_id)
 
         if not messages:
             logger.info(f"{consultation_id} 메시지 없음")
@@ -73,28 +73,14 @@ async def analyze_and_save(session_factory, client, consultation_id):
 
         try:
 
-            # 처리 시작 (UPSERT)
-            await session.execute(
-                text(UPSERT_PROCESSING_SQL),
-                {
-                    "consultation_id": consultation_id,
-                    "customer_id": customer_id
-                }
-            )
-
+            await repo.upsert_processing(session, consultation_id, customer_id)
             await session.commit()
 
-            # AI 분석
             analysis_result = await call_analysis_api(client, consultation_id, messages)
 
-            # 분석 결과 저장
             await save_analysis(session, consultation_id, customer_id, analysis_result)
 
-            # 성공 처리
-            await session.execute(
-                text(UPDATE_SUCCESS_SQL),
-                {"consultation_id": consultation_id}
-            )
+            await repo.update_success(session, consultation_id)
 
             await session.commit()
 
@@ -102,11 +88,7 @@ async def analyze_and_save(session_factory, client, consultation_id):
 
         except Exception as e:
 
-            await session.execute(
-                text(UPDATE_FAILED_SQL),
-                {"consultation_id": consultation_id}
-            )
-
+            await repo.update_failed(session, consultation_id)
             await session.commit()
 
             logger.error(f"{consultation_id} 처리 실패: {e}")
