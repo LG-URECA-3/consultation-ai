@@ -2,7 +2,7 @@ import asyncio
 import httpx
 
 from app.batch.batch_db import async_session, engine
-from app.batch.consultation_tendency_repository import fetch_consultation_ids
+from app.batch.consultation_tendency_repository import fetch_consultation_ids, fetch_batch_stats
 from app.batch.consultation_tendency_service import analyze_and_save, parse_args
 from app.batch.tendency_api import logger
 
@@ -20,11 +20,18 @@ async def main():
     args = parse_args()
     target_date = args.date
 
+
     async with async_session() as session:
 
-        consultation_ids = await fetch_consultation_ids(session, target_date)
+        stats = await fetch_batch_stats(session, target_date)
 
-    logger.info(f"{len(consultation_ids)}개 상담 분석 시작")
+        logger.info(f"전체 상담: {stats['total']}")
+        logger.info(f"이미 분석 완료: {stats['success']}")
+        logger.info(f"이전 실패: {stats['failed']}")
+        logger.info(f"처리 중 상태: {stats['processing']}")
+        logger.info(f"신규 상담: {stats['new']}")
+
+        consultation_ids = await fetch_consultation_ids(session, target_date)
 
     async with httpx.AsyncClient(timeout=None) as client:
 

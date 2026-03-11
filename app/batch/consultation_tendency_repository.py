@@ -88,6 +88,18 @@ SET batch_status='FAILED'
 WHERE consultation_id=:consultation_id
 """
 
+STATS_SQL = """
+SELECT
+    COUNT(*) AS total,
+    SUM(CASE WHEN t.batch_status = 'SUCCESS' THEN 1 ELSE 0 END) AS success_count,
+    SUM(CASE WHEN t.batch_status = 'FAILED' THEN 1 ELSE 0 END) AS failed_count,
+    SUM(CASE WHEN t.batch_status = 'PROCESSING' THEN 1 ELSE 0 END) AS processing_count,
+    SUM(CASE WHEN t.batch_status IS NULL THEN 1 ELSE 0 END) AS new_count
+FROM consultations c
+LEFT JOIN consultation_tendency t
+  ON c.consultation_id = t.consultation_id
+WHERE DATE(c.created_at) = :target_date
+"""
 
 # =========================
 # Repository Functions
@@ -146,3 +158,20 @@ async def update_failed(session, consultation_id):
         text(UPDATE_FAILED_SQL),
         {"consultation_id": consultation_id}
     )
+
+async def fetch_batch_stats(session, target_date):
+
+    result = await session.execute(
+        text(STATS_SQL),
+        {"target_date": target_date}
+    )
+
+    row = result.fetchone()
+
+    return {
+        "total": row[0],
+        "success": row[1],
+        "failed": row[2],
+        "processing": row[3],
+        "new": row[4],
+    }

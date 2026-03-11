@@ -1,5 +1,4 @@
 import asyncio
-import httpx
 import logging
 
 logging.basicConfig(level=logging.INFO)
