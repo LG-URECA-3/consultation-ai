@@ -54,63 +54,38 @@ async def faq_similarity_search(summary_vector: list[float], keywords: list[str]
         return None
 
     search_request = {
-        "retriever": {
-            "linear": {
-                "retrievers": [
-                    {
-                        "retriever": {
-                            "standard": {
-                                "query": {
-                                    "bool": {
-                                        "must": [
-                                            {
-                                                "multi_match": {
-                                                    "query": keyword_query, # LLM이 뽑아준 짧은 키워드
-                                                    "fields": ["summary_text", "question", "answer"],
-                                                    "operator": "or",
-                                                    # "minimum_should_match": "50%" # 키워드 중 최소 절반은 맞아야함.
-                                                }
-                                            }
-                                        ],
-                                        "filter": [
-                                            {
-                                                "term": {
-                                                    "product_line_code": product_line_code
-                                                }
-                                            }
-                                        ]
-                                    }
-                                }
-                            }
-                        },
-                        "weight": 0.3,
-                        # "normalizer": "minmax" # 1등이면 1.0으로 치환해버리는 문제 있음.
-                        "normalizer": "none"
-                    },
-                    {
-                        "retriever": {
-                            "knn": {
-                                "field": "question_vector",
-                                "query_vector": summary_vector, # 저장된 요약 임베딩-입력된 요약 임베딩 비교.
-                                "k": k,
-                                "num_candidates": 50
-                            }
-                        },
-                        "weight": 0.7,
-                        "normalizer": "minmax"
+        "size": k,
+        "explain": True,
+        "query": {
+            "script_score": {
+                # 1. 키워드 검색(BM25)
+                "query": {
+                    "bool": {
+                        "must": [{"multi_match": {"query": keyword_query, "fields": ["question", "answer"]}}],
+                        "filter": [{"term": {"product_line_code": product_line_code}}]
                     }
-                ],
-                "rank_window_size": k
+                },
+                # 2. 키워드 점수 + 벡터 유사도
+                # 벡터가 확실하면(0.95↑) 벡터 점수 그대로, 아니면 가중 합산
+                "script": {
+                    "source": """
+                        double v_sim = (cosineSimilarity(params.query_vector, 'question_vector') + 1.0) / 2.0;
+                        double n_bm25 = _score / (_score + 2.0);
+                        
+                        double final_score = v_sim >= 0.85 ? Math.max(0.9, (v_sim * 0.7 + n_bm25 * 0.3)) : (v_sim * 0.7 + n_bm25 * 0.3);
+                        return final_score;
+                    """,
+                    "params": {"query_vector": summary_vector}
+                }
             }
         },
-        "_source": ["faq_id", "question"]
+        "_source": ["faq_id", "question", "answer"]
     }
 
     try:
         response = await es_client.search(
             index=FAQ_INDEX,
-            retriever=search_request["retriever"],
-            source=search_request["_source"],
+            body=search_request,
         )
         logger.info(f"ES 검색 완료! 최대 유사도: {response['hits']['total']}")
         return response

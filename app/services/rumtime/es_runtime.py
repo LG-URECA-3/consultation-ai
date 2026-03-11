@@ -13,55 +13,51 @@ async def check_similarity(input_text: str, input_vector: list[float], k: int = 
         return None
 
     search_request = {
-        "retriever": {
-            "linear": {
-                "retrievers": [
-                    {
-                        "retriever": {
-                            "standard": {
-                                "query": {
-                                    "bool": {
-                                        "must": [
-                                            {
-                                                "multi_match": {
-                                                    "query": input_text,
-                                                    "fields": ["summary_text", "question", "answer"],
-                                                    "operator": "or",
-                                                    # "minimum_should_match": "50%" # 키워드 중 최소 절반은 맞아야함.
-                                                }
-                                            }
-                                        ]
-                                    }
+        "size": k,
+        "query": {
+            "script_score": {
+                # 1. 베이스 쿼리: 키워드가 하나라도 걸리는 것들 + 상품군 필터
+                "query": {
+                    "bool": {
+                        "should": [
+                            {
+                                "multi_match": {
+                                    "query": input_text,
+                                    "fields": ["question", "answer"], 
+                                    "operator": "or"
                                 }
                             }
-                        },
-                        "weight": 0.3,
-                        "normalizer": "minmax"
-                    },
-                    {
-                        "retriever": {
-                            "knn": {
-                                "field": "question_vector",
-                                "query_vector": input_vector, # 입력된 텍스트 임베딩-저장된 텍스트 임베딩 비교.
-                                "k": k,
-                                "num_candidates": 50
-                            }
-                        },
-                        "weight": 0.7,
-                        "normalizer": "minmax"
+                        ],
+                        # "filter": [{"term": {"product_line_code": product_line_code}}] # 필요시 활성화
                     }
-                ],
-                "rank_window_size": k
+                },
+                # 2. 정교한 점수 계산 로직 (Painless Script)
+                # 벡터 유사도 계산 -> 키워드 정규화(k_factor = 2.0 적용) -> 가중치 합산(7:3 비율) -> 보정 로직(벡터가 확실하면(0.85 이상) 점수를 0.9 위로 펌핑)
+                "script": {
+                    "source": """
+                        double v_sim = (cosineSimilarity(params.query_vector, 'question_vector') + 1.0) / 2.0;
+                        double n_bm25 = _score / (_score + 2.0);
+                        
+                        double combined = (v_sim * 0.7) + (n_bm25 * 0.3);
+                        
+                        if (v_sim >= 0.85) {
+                            return Math.max(0.9, combined);
+                        }
+                        
+                        return combined;
+                    """,
+                    "params": {"query_vector": input_vector}
+                }
             }
         },
-        "_source": ["faq_id", "question", "answer"]
+        # 가치 증명을 위한 메타데이터 포함
+        "_source": ["faq_id", "question", "answer", "hit_count", "created_at"]
     }
 
     try:
         response = await es_client.search(
             index=FAQ_INDEX,
-            retriever=search_request["retriever"],
-            source=search_request["_source"],
+            body=search_request,
         )
         logger.info(f"ES 검색 완료! 최대 유사도: {response['hits']['total']}")
         return response

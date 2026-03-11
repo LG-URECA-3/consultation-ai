@@ -143,21 +143,10 @@ async def get_faq_top1(
     FAQ 매칭 결과 중 가장 높은 점수를 가진 FAQ 반환.
     """
     
-    k_factor = 10.0
-
     hit = faq_top10[0]
     if not hit:
         return None, 0.0
 
-    # raw_vector_score = hit.get("sub_searches", {}).get("vector_part", {}).get("score", 0.0)
-    # raw_keyword_score = hit.get("sub_searches", {}).get("keyword_part", {}).get("score", 0.0)
-
-    # normalized_keyword_score = raw_keyword_score / (raw_keyword_score + k_factor)
-
-    # final_score = normalized_keyword_score * 0.3 + raw_vector_score * 0.7
-
-    # if raw_vector_score >= 0.9:
-    #     final_score = max(final_score, 0.9)
     return hit, float(hit.get("_score", 0.0))
 
 

@@ -92,7 +92,7 @@ async def test_faq_similarity(request: FAQSearchTestRequest):
         )
         logger.info(f"FAQ 검색 결과: {response}")
 
-        hit, score = await get_faq_top1(response)
+        hit, score = await get_faq_top1(response["hits"]["hits"])
         return {"hit": hit, "score": score}
 
     except Exception as e:
