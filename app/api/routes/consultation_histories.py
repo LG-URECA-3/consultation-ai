@@ -65,6 +65,7 @@ from app.services.common.embeddings import get_embedding
 from app.services.processor.es_faq import faq_similarity_search
 from loguru import logger
 from app.models.enums import ProductLineCode
+from app.services.processor.faq_indexer import get_faq_top1
 
 class FAQSearchTestRequest(BaseModel):
     summary_text: str = Field(..., description="검색할 요약문 (임베딩 후 kNN 검색에 사용)")
@@ -84,11 +85,15 @@ async def test_faq_similarity(request: FAQSearchTestRequest):
         # Step C: 이전에 작성한 하이브리드 검색 함수 호출
         # (앞서 정의한 faq_similarity_search 함수가 같은 파일 혹은 import 가능해야 함)
 
-        return await faq_similarity_search(
+        response = await faq_similarity_search(
             summary_vector=summary_vector,
             keywords=request.keywords,
             product_line_code=request.product_line_code.value
         )
+        logger.info(f"FAQ 검색 결과: {response}")
+
+        hit, score = await get_faq_top1(response)
+        return {"hit": hit, "score": score}
 
     except Exception as e:
         logger.error(f"테스트 중 에러 발생: {e}")

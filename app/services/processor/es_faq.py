@@ -84,7 +84,8 @@ async def faq_similarity_search(summary_vector: list[float], keywords: list[str]
                             }
                         },
                         "weight": 0.3,
-                        "normalizer": "minmax"
+                        # "normalizer": "minmax" # 1등이면 1.0으로 치환해버리는 문제 있음.
+                        "normalizer": "none"
                     },
                     {
                         "retriever": {

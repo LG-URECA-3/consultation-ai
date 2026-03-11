@@ -32,7 +32,7 @@ from app.services.processor.es_faq import FAQ_INDEX
 from app.models.knowledge_base import KnowledgeBase
 from app.crud.crud_knowledge_base import insert_knowledge_base, update_knowledge_base_hit_count_and_last_hit_at
 
-HIGH_SIMILARITY_THRESHOLD = 0.95
+HIGH_SIMILARITY_THRESHOLD = 0.9
 LOW_SIMILARITY_THRESHOLD = 0.6
 
 async def run_faq_from_consultation_doc(doc: ConsultationHistoryDoc) -> None:
@@ -140,13 +140,24 @@ async def get_faq_top1(
     faq_top10: list[dict],
 ) -> tuple[dict | None, float]:
     """
-    _id, _source가 있으면 (hit, score) 반환. 없으면 (None, 0.0) 반환.
+    FAQ 매칭 결과 중 가장 높은 점수를 가진 FAQ 반환.
     """
     
+    k_factor = 10.0
+
     hit = faq_top10[0]
     if not hit:
         return None, 0.0
 
+    # raw_vector_score = hit.get("sub_searches", {}).get("vector_part", {}).get("score", 0.0)
+    # raw_keyword_score = hit.get("sub_searches", {}).get("keyword_part", {}).get("score", 0.0)
+
+    # normalized_keyword_score = raw_keyword_score / (raw_keyword_score + k_factor)
+
+    # final_score = normalized_keyword_score * 0.3 + raw_vector_score * 0.7
+
+    # if raw_vector_score >= 0.9:
+    #     final_score = max(final_score, 0.9)
     return hit, float(hit.get("_score", 0.0))
 
 
