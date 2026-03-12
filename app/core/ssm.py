@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import os
 
-SSM_PREFIX = "/config/consultation-service"
+SSM_PREFIX = "/config/consultation-service/prod"
 
 # SSM 파라미터 경로 -> 설정 키(환경변수명) 매핑
 SSM_PARAM_TO_ENV: dict[str, str] = {
