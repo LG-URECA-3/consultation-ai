@@ -28,3 +28,12 @@ async def get_summary_text_with_keywords_by_record_id(session: AsyncSession, rec
 
     return SummaryKeywordResponse(summary=row['summary_text'], keywords=keywords)
     
+
+async def get_record_id_by_consultation_id(session: AsyncSession, consultation_id: int) -> int | None:
+    """
+    상담 ID로 상담 기록 ID를 비동기 조회합니다.
+    """
+    query = text("select record_id from consultation_records where consultation_id = :consultation_id")
+    result = await session.execute(query, {"consultation_id": consultation_id})
+    record_id = result.scalar_one_or_none()
+    return record_id
