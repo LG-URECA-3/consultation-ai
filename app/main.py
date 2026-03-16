@@ -7,6 +7,7 @@ from loguru import logger
 import asyncio
 from app.kafka.consume import consumer
 from app.api.routes.consultation_histories import router as consultation_histories_router
+from app.api.routes.runtime_api import router as runtime_router
 from app.core.config import settings
 from app.core.infrastructure import engine, es_client
 
@@ -37,6 +38,7 @@ app = FastAPI(
 )
 
 app.include_router(consultation_histories_router)
+app.include_router(runtime_router)
 
 # 3. 기본 헬스체크 엔드포인트
 @app.get("/fastapi/health")

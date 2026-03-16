@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     KAFKA_BOOTSTRAP_SERVERS: str = ""
     KAFKA_CONSUMER_GROUP_ID: str = "consultation-group"
     KAFKA_AUTO_OFFSET_RESET: str = "earliest"
-    KAFKA_TOPIC: str = "processing-consultation"
+    KAFKA_TOPIC: str = "consultation.summary.completed"
     KAFKA_SESSION_TIMEOUT_MS: int = 30000
 
     # Redis (SSM redis_host, redis_password, 선택)

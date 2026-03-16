@@ -2,7 +2,8 @@ from app.core.config import settings
 from aiokafka import AIOKafkaConsumer
 import json
 from loguru import logger
-from app.services.post_processor import post_processing
+from app.services.processor.post_processor import post_processing
+from app.schemas.kafka_consultation_event import ConsultationEvent
 
 async def setup_kafka_consumer():
     kafka_consumer = AIOKafkaConsumer(
@@ -21,12 +22,18 @@ async def consumer():
     await kafka_consumer.start()
     try:
         async for message in kafka_consumer:
-            consultation_id = message.value
+            try:
+                # message.value가 이미 dict라면 바로 넣고, 문자열이라면 json.loads
+                event = ConsultationEvent.model_validate(message.value)
+            except Exception as e:
+                logger.error(f"kafka 메시지 형식이 올바르지 않습니다: {e}")
+                continue
+
             # 여기서 consultation_search_sync 테이블 생성 및 상태값 저장(PENDING)
-            logger.info(f"consultation_id 수신: {consultation_id}")
+            logger.info(f"kafka 수신: {event}")
 
             try:
-                doc = await post_processing(consultation_id)
+                doc = await post_processing(event.consultation_id, event.record_id)
 
                 if doc is not None:
                     # 여기서 consultation_search_sync 테이블 상태값 저장(INDEXED)

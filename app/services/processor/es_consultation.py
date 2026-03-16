@@ -60,7 +60,7 @@ async def _get_consultation_doc_from_es(consultation_id: int) -> ConsultationHis
             id=str(consultation_id),
         )
     except Exception as e:
-        logger.error("ES에서 문서를 가져오지 못했습니다. ID: %s, 사유: %s", consultation_id, e)
+        logger.debug(f"ES에서 문서를 가져오지 못했습니다. ID: {consultation_id}, 사유: {e}")
         return None
 
     src = resp.get("_source")

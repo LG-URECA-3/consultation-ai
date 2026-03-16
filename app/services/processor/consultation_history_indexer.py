@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from app.core.infrastructure import es_client
-from app.services import embeddings
+from app.services.common import embeddings
 from app.core.infrastructure import AsyncSessionLocal
 
 from app.core.infrastructure import es_client
@@ -18,19 +18,20 @@ from app.models.consultation_search_sync import ConsultationSearchSync
 from app.models.enums import IndexStatus
 from datetime import datetime, timezone
 from sqlalchemy.exc import SQLAlchemyError
-from app.crud.crud_consultation_record import get_record_by_consultation_id
+from app.crud.crud_consultation_record import get_summary_text_with_keywords_by_record_id
+from app.schemas.consultation_summary_keyword import SummaryKeywordResponse
 from app.schemas.consultation_history_es import (
     CustomerPersona,
 )
-from app.services.es_consultation import setup_index_if_not_exists
-from app.services.es_consultation import (
+from app.services.processor.es_consultation import setup_index_if_not_exists
+from app.services.processor.es_consultation import (
     _get_consultation_doc_from_es,
     save_index,
     CONSULTATION_HISTORIES_INDEX
 )
 
     
-async def fetch_and_index_consultation_history(consultation_id: int) -> ConsultationHistoryDoc | None:
+async def fetch_and_index_consultation_history(consultation_id: int, record_id: int) -> ConsultationHistoryDoc | None:
     """
     Step 1: ES 또는 DB에서 상담 데이터를 확보한 뒤 가공·ES 인덱싱하여 ConsultationHistoryDoc 반환.
     ES에 문서가 있으면 인덱싱 없이 doc만 반환. 없으면 DB 조회 후 doc 생성·인덱싱 후 반환.
@@ -63,15 +64,16 @@ async def fetch_and_index_consultation_history(consultation_id: int) -> Consulta
 
         try:
             messages = await get_messages_by_consultation_id(session, consultation_id) # message_seq, sender_type, content 리스트
-            record = await get_record_by_consultation_id(session, consultation_id) # summary_text
+            summary_keyword_response = await get_summary_text_with_keywords_by_record_id(session, record_id) # summary_text , keywords
             full_text = _build_full_text(messages) # message_seq, sender_type, content 모두 연결한 텍스트
 
-            summary_response = await embeddings.get_summary_text(full_text)
+            logger.info(f"summary_keyword_response: {summary_keyword_response}")
+            # summary_response = await embeddings.get_summary_text(full_text)
             # summary_text = await embeddings.get_summary_text(full_text)
-#             summary_text = (record.summary_text if record else "") or ""
+            # summary_text = (record.summary_text if record else "") or ""
             # if summary_text:
-            if summary_response:
-                summary_vector = await embeddings.get_embedding(summary_response.summary)
+            if summary_keyword_response:
+                summary_vector = await embeddings.get_embedding(summary_keyword_response.summary)
 
             customer_persona = CustomerPersona(sentiment="NEUTRAL", traits=[])
             metadata = ConsultationBase.model_validate(consultation)
@@ -79,10 +81,10 @@ async def fetch_and_index_consultation_history(consultation_id: int) -> Consulta
             doc = ConsultationHistoryDoc(
                 consultation_id=consultation_id,
                 full_text=full_text,
-                summary_text=summary_response.summary,
+                summary_text=summary_keyword_response.summary,
                 summary_vector=summary_vector,
                 messages=messages,
-                keywords=summary_response.keywords,
+                keywords=summary_keyword_response.keywords,
                 customer_persona=customer_persona, # 이걸 여기에 넣는게 맞는지 고민돼요
                 metadata=metadata
             )
@@ -114,13 +116,13 @@ async def fetch_and_index_consultation_history(consultation_id: int) -> Consulta
             try:
                 await upsert_search_sync(session, sync_record)
                 await session.commit()
-                logger.info(f"상담 인덱스 저장 완료: consultation_id={consultation_id}")
 
             except SQLAlchemyError as se:
                 await session.rollback()
                 logger.error(f"sync DB 저장 실패: {str(se)}")
 
             finally:
+                logger.info(f"상담 인덱스 저장 완료: consultation_id={consultation_id}")
                 return doc
 
 def _build_full_text(messages: list[ConsultationMessages]) -> str:
