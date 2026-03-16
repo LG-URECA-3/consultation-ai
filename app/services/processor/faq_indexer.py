@@ -31,6 +31,7 @@ from app.core.infrastructure import AsyncSessionLocal, es_client
 from app.services.processor.es_faq import FAQ_INDEX
 from app.models.knowledge_base import KnowledgeBase
 from app.crud.crud_knowledge_base import insert_knowledge_base, update_knowledge_base_hit_count_and_last_hit_at
+from app.services.data.dataset_logger import save_to_saved_dataset
 
 HIGH_SIMILARITY_THRESHOLD = 0.9
 LOW_SIMILARITY_THRESHOLD = 0.6
@@ -77,12 +78,18 @@ async def _run_faq_logic(
         resp = await faq_similarity_search(summary_vector, keywords, product_line_code, 10)
         if resp is None:
             logger.info(f"인덱스가 없거나 FAQ 매칭 결과 없음. 신규 FAQ 생성: {summary_text}")
-            await create_faq_and_save_kb_to_db(
+            faq_doc = await create_faq_and_save_kb_to_db(
                 session=session,
                 source_consultation_id=str(consultation_id),
                 summary_text=summary_text,
                 full_text=full_text,
                 product_line_code=product_line_code,
+            )
+            await save_to_saved_dataset(
+                faq_id=faq_doc.faq_id,
+                source_consultation_id=str(consultation_id),
+                faq_question=faq_doc.question,
+                faq_answer=faq_doc.answer
             )
             return
         
@@ -90,12 +97,18 @@ async def _run_faq_logic(
         
         if not faq_top10:
             logger.info(f"인덱스가 있지만 FAQ 매칭 결과가 없습니다. 신규 FAQ 생성: {summary_text}")
-            await create_faq_and_save_kb_to_db(
+            faq_doc = await create_faq_and_save_kb_to_db(
                 session=session,
                 source_consultation_id=str(consultation_id),
                 summary_text=summary_text,
                 full_text=full_text,
                 product_line_code=product_line_code,
+            )
+            await save_to_saved_dataset(
+                faq_id=faq_doc.faq_id,
+                source_consultation_id=str(consultation_id),
+                faq_question=faq_doc.question,
+                faq_answer=faq_doc.answer
             )
             return
         
@@ -104,12 +117,18 @@ async def _run_faq_logic(
         # 1. FAQ 매칭 결과가 없거나 유사도가 LOW_SIMILARITY_THRESHOLD 미만이면 신규 FAQ 생성
         if faq_hit is None or faq_score < LOW_SIMILARITY_THRESHOLD:
             logger.info(f"FAQ 매칭 결과가 없거나 유사도가 LOW_SIMILARITY_THRESHOLD 미만이면 신규 FAQ 생성: {faq_hit}, {faq_score}")
-            await create_faq_and_save_kb_to_db(
+            faq_doc = await create_faq_and_save_kb_to_db(
                 session=session,
                 source_consultation_id=str(consultation_id),
                 summary_text=summary_text,
                 full_text=full_text,
                 product_line_code=product_line_code,
+            )
+            await save_to_saved_dataset(
+                faq_id=faq_doc.faq_id,
+                source_consultation_id=str(consultation_id),
+                faq_question=faq_doc.question,
+                faq_answer=faq_doc.answer
             )
 
         # 2. FAQ 매칭 결과가 있고 유사도가 HIGH_SIMILARITY_THRESHOLD 이상이면 hit_count 증가
@@ -121,16 +140,22 @@ async def _run_faq_logic(
         else:
             logger.info(f"FAQ 매칭 결과가 있고 유사도가 HIGH_SIMILARITY_THRESHOLD 미만이면 LLM으로 동일 질문 여부 판별: {faq_hit}, {faq_score}")
             faq_question = (faq_hit.get("_source") or {}).get("question", "")
-            if llm_same_question(summary_text, faq_question):
+            if llm_same_question(summary_text, faq_question) == True:
                 await increase_hit_count(session, faq_hit["_id"])
             else:
                 logger.info(f"동일 질문이 아니면 신규 FAQ 생성: {faq_question}")
-                await create_faq_and_save_kb_to_db(
+                faq_doc = await create_faq_and_save_kb_to_db(
                     session=session,
                     source_consultation_id=str(consultation_id),
                     summary_text=summary_text,
                     full_text=full_text,
                     product_line_code=product_line_code,
+                )
+                await save_to_saved_dataset(
+                    faq_id=faq_doc.faq_id,
+                    source_consultation_id=str(consultation_id),
+                    faq_question=faq_doc.question,
+                    faq_answer=faq_doc.answer
                 )
     except Exception as e:
         logger.warning(f"FAQ 매칭/생성 중 오류 (상담 이력 인덱싱은 완료됨):{e}")
@@ -192,6 +217,7 @@ async def create_faq_and_save_kb_to_db(
             updated_at=datetime.now()
         )
         await upsert_kb_search_sync(session, kb_search_sync)
+        return faq_doc
     except Exception as e:
         logger.error(f"FAQ 생성 및 KB 저장 중 오류 발생: {e}")
         raise e
