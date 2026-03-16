@@ -39,7 +39,9 @@ async def runtime_search(question_text: str) -> RuntimeSearchResponse:
          hits = response['hits']['hits']
          # 유사도가 0.5 이상이면 retrieved_faqs 리스트에 추가.
          retrieved_faqs = []
-         for hit in hits:
+         for i,hit in enumerate(hits):
+            if i > 15: # 최대 15개까지만 추출
+               break
             retrieved_faqs.append({
                "faq_id": hit['_source'].get('faq_id'),
                "question": hit['_source'].get('question'),
