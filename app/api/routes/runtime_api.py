@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.services.rumtime.runtime_search import runtime_search
 from app.schemas.runtime_search_resonse import RuntimeSearchResponse
 
-router = APIRouter(prefix="/api/v1", tags=["runtime-api"])
+router = APIRouter(prefix="/fastapi/v1", tags=["runtime-api"])
 
 @router.post(
     "/search/faq",
