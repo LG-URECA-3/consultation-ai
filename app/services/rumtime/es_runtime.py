@@ -32,13 +32,13 @@ async def check_similarity(input_text: str, input_vector: list[float], k: int = 
                     }
                 },
                 # 2. 정교한 점수 계산 로직 (Painless Script)
-                # 벡터 유사도 계산 -> 키워드 정규화(k_factor = 2.0 적용) -> 가중치 합산(7:3 비율) -> 보정 로직(벡터가 확실하면(0.85 이상) 점수를 0.9 위로 펌핑)
+                # 벡터 유사도 계산 -> 키워드 정규화(k_factor = 2.0 적용) -> 가중치 합산(6:4 비율) -> 보정 로직(벡터가 확실하면(0.85 이상) 점수를 0.9 위로 펌핑)
                 "script": {
                     "source": """
                         double v_sim = (cosineSimilarity(params.query_vector, 'question_vector') + 1.0) / 2.0;
                         double n_bm25 = _score / (_score + 2.0);
                         
-                        double combined = (v_sim * 0.7) + (n_bm25 * 0.3);
+                        double combined = (v_sim * 0.6) + (n_bm25 * 0.4); 
                         
                         if (v_sim >= 0.85) {
                             return Math.max(0.9, combined);
