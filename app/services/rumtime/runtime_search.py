@@ -39,19 +39,20 @@ async def runtime_search(question_text: str) -> RuntimeSearchResponse:
          hits = response['hits']['hits']
          # 유사도가 0.5 이상이면 retrieved_faqs 리스트에 추가.
          retrieved_faqs = []
-         for i,hit in enumerate(hits):
-            if i > 15: # 최대 15개까지만 추출
+         for hit in hits:
+            if len(retrieved_faqs) >= 15:
                break
+
             retrieved_faqs.append({
                "faq_id": hit['_source'].get('faq_id'),
                "question": hit['_source'].get('question'),
                "answer": hit['_source'].get('answer'),
-               "score": round(hit['_score'], 2) # 소수점 둘째자리까지 반올림해서 깔끔하게
+               # "score": round(hit['_score'], 2) # 소수점 둘째자리까지 반올림해서 깔끔하게 -> LLM 판단 정확도 위해 제거.
             })
 
          
          if retrieved_faqs:
-            logger.info(f"LLM 답변 조합 진행: {retrieved_faqs}")
+            # logger.info(f"LLM 답변 조합 진행: {retrieved_faqs}")
             response = await llm_generate_rag_answer(question_text, retrieved_faqs)
             logger.info(f"LLM 답변 조합 결과: {response}")
 
