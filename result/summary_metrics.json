@@ -1,25 +1,25 @@
 {
   "overall": {
-    "mrr": 0.8666666666666667,
-    "recall": 0.7833333333333333,
-    "precision": 0.8333333333333334,
+    "mrr": 0.9833333333333333,
+    "recall": 0.8888888888888888,
+    "precision": 0.8888888888888888,
     "total_count": 30
   },
   "by_type": {
     "mrr": {
       "multi": 1.0,
       "normal": 1.0,
-      "rough": 0.6
+      "rough": 0.95
     },
     "recall": {
-      "multi": 0.75,
+      "multi": 0.6666666666666666,
       "normal": 1.0,
-      "rough": 0.6
+      "rough": 1.0
     },
     "precision": {
-      "multi": 0.9,
-      "normal": 1.0,
-      "rough": 0.6
+      "multi": 0.8833333333333334,
+      "normal": 0.95,
+      "rough": 0.8333333333333334
     }
   }
 }

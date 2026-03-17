@@ -15,7 +15,7 @@ from app.services.processor.post_processor import (
 from app.services.processor.consultation_history_search import search_by_summary
 from app.schemas.consultation_history_doc import ConsultationHistoryDoc
 
-router = APIRouter(prefix="/consultation-histories", tags=["consultation-histories"])
+router = APIRouter(prefix="/fastapi/consultation-histories", tags=["consultation-histories"])
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -25,7 +25,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 @router.post(
-    "/index/{consultation_id}",
+    "/fastapi/index/{consultation_id}",
     response_model=ConsultationHistoryDoc,
     summary="상담 이력 ES 인덱싱",
     description="consultation_id로 DB를 조회해 consultation_histories 인덱스에 저장합니다.",
@@ -41,7 +41,7 @@ async def index_consultation_to_es(
 
 
 @router.post(
-    "/search",
+    "/fastapi/search",
     response_model=ConsultationHistorySearchResponse,
     summary="요약문 유사도 검색",
     description="요약문 하나를 받아 임베딩 후 consultation_histories에서 유사한 상담 이력을 검색합니다.",
