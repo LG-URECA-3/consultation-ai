@@ -31,7 +31,6 @@ from app.core.infrastructure import AsyncSessionLocal, es_client
 from app.services.processor.es_faq import FAQ_INDEX
 from app.models.knowledge_base import KnowledgeBase
 from app.crud.crud_knowledge_base import insert_knowledge_base, update_knowledge_base_hit_count_and_last_hit_at
-from app.services.data.dataset_logger import save_to_saved_dataset
 
 HIGH_SIMILARITY_THRESHOLD = 0.9
 LOW_SIMILARITY_THRESHOLD = 0.6
@@ -85,12 +84,6 @@ async def _run_faq_logic(
                 full_text=full_text,
                 product_line_code=product_line_code,
             )
-            await save_to_saved_dataset(
-                faq_id=faq_doc.faq_id,
-                source_consultation_id=str(consultation_id),
-                faq_question=faq_doc.question,
-                faq_answer=faq_doc.answer
-            )
             return
         
         faq_top10 = resp["hits"]["hits"]
@@ -103,12 +96,6 @@ async def _run_faq_logic(
                 summary_text=summary_text,
                 full_text=full_text,
                 product_line_code=product_line_code,
-            )
-            await save_to_saved_dataset(
-                faq_id=faq_doc.faq_id,
-                source_consultation_id=str(consultation_id),
-                faq_question=faq_doc.question,
-                faq_answer=faq_doc.answer
             )
             return
         
@@ -123,12 +110,6 @@ async def _run_faq_logic(
                 summary_text=summary_text,
                 full_text=full_text,
                 product_line_code=product_line_code,
-            )
-            await save_to_saved_dataset(
-                faq_id=faq_doc.faq_id,
-                source_consultation_id=str(consultation_id),
-                faq_question=faq_doc.question,
-                faq_answer=faq_doc.answer
             )
 
         # 2. FAQ 매칭 결과가 있고 유사도가 HIGH_SIMILARITY_THRESHOLD 이상이면 hit_count 증가
@@ -150,12 +131,6 @@ async def _run_faq_logic(
                     summary_text=summary_text,
                     full_text=full_text,
                     product_line_code=product_line_code,
-                )
-                await save_to_saved_dataset(
-                    faq_id=faq_doc.faq_id,
-                    source_consultation_id=str(consultation_id),
-                    faq_question=faq_doc.question,
-                    faq_answer=faq_doc.answer
                 )
     except Exception as e:
         logger.warning(f"FAQ 매칭/생성 중 오류 (상담 이력 인덱싱은 완료됨):{e}")

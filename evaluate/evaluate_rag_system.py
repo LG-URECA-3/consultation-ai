@@ -18,7 +18,7 @@ if root_dir not in sys.path:
 from app.services.rumtime.runtime_search import runtime_search
 
 async def run_evaluation(golden_set_path: str):
-    # 결과 저장 경로
+    # 결과 저장 경로 설정
     save_dir = os.path.join(root_dir, "result")
     os.makedirs(save_dir, exist_ok=True)
     temp_path = os.path.join(save_dir, "temp_results.jsonl")
