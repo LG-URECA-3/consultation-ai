@@ -1,4 +1,6 @@
 import instructor
+import boto3
+from dotenv import load_dotenv
 from openai import OpenAI
 from typing import AsyncGenerator
 from elasticsearch import AsyncElasticsearch
@@ -22,6 +24,9 @@ AsyncSessionLocal = sessionmaker(
 
 # OpenAI
 openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+# AWS Bedrock
+claude_client = instructor.from_bedrock(boto3.client('bedrock-runtime', region_name='us-east-1'))
 
 client = instructor.from_openai(openai_client)
 

@@ -55,7 +55,7 @@ async def faq_similarity_search(summary_vector: list[float], keywords: list[str]
 
     search_request = {
         "size": k,
-        "explain": True,
+        # "explain": True,
         "query": {
             "script_score": {
                 # 1. 키워드 검색(BM25)
@@ -87,7 +87,7 @@ async def faq_similarity_search(summary_vector: list[float], keywords: list[str]
             index=FAQ_INDEX,
             body=search_request,
         )
-        logger.info(f"ES 검색 완료! 최대 유사도: {response['hits']['total']}")
+        logger.info(f"ES 검색 완료! 검색된 faq: {response['hits']['total']}")
         return response
 
     except Exception as e:

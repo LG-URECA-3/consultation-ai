@@ -67,7 +67,7 @@ async def fetch_and_index_consultation_history(consultation_id: int, record_id: 
             summary_keyword_response = await get_summary_text_with_keywords_by_record_id(session, record_id) # summary_text , keywords
             full_text = _build_full_text(messages) # message_seq, sender_type, content 모두 연결한 텍스트
 
-            logger.info(f"summary_keyword_response: {summary_keyword_response}")
+            # logger.info(f"summary_keyword_response: {summary_keyword_response}")
             # summary_response = await embeddings.get_summary_text(full_text)
             # summary_text = await embeddings.get_summary_text(full_text)
             # summary_text = (record.summary_text if record else "") or ""
@@ -94,7 +94,7 @@ async def fetch_and_index_consultation_history(consultation_id: int, record_id: 
             es_response = await save_index(consultation_id, document)
 
             # 응답값 출력해서 형태 확인
-            logger.success(f"Elasticsearch 저장 성공! 응답 결과: {dict(es_response)}")
+            logger.success(f"Elasticsearch 저장 성공! 응답 결과: {es_response['_id']}")
 
             #성공시
             sync_record.es_doc_id = es_response["_id"]
