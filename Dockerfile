@@ -24,6 +24,7 @@ RUN poetry install --without dev --no-root --no-interaction
 
 # 애플리케이션 코드
 COPY app ./app
+COPY evaluate ./evaluate
 
 # 비 root 사용자 (선택)
 # RUN adduser --disabled-password appuser && chown -R appuser:appuser /app
