@@ -19,6 +19,8 @@ from app.models.enums import IndexStatus
 from datetime import datetime, timezone
 from sqlalchemy.exc import SQLAlchemyError
 from app.crud.crud_consultation_record import get_summary_text_with_keywords_by_record_id
+from app.crud.crud_customer import get_customer_name_by_id
+from app.crud.crud_user import get_user_name_by_id
 from app.schemas.consultation_summary_keyword import SummaryKeywordResponse
 from app.schemas.consultation_history_es import (
     CustomerPersona,
@@ -75,6 +77,8 @@ async def fetch_and_index_consultation_history(consultation_id: int, record_id: 
             if summary_keyword_response:
                 summary_vector = await embeddings.get_embedding(summary_keyword_response.summary)
 
+            customer_name = await get_customer_name_by_id(session, consultation.customer_id) if consultation.customer_id else None
+            agent_name = await get_user_name_by_id(session, consultation.agent_id) if consultation.agent_id else None
             customer_persona = CustomerPersona(sentiment="NEUTRAL", traits=[])
             metadata = ConsultationBase.model_validate(consultation)
 
@@ -89,6 +93,10 @@ async def fetch_and_index_consultation_history(consultation_id: int, record_id: 
                 metadata=metadata
             )
             document = doc.model_dump(mode="json")
+            if customer_name:
+                document["metadata"]["customer_name"] = customer_name
+            if agent_name:
+                document["metadata"]["agent_name"] = agent_name
 
             # ES에 데이터 저장 시도 / 중복 저장 방지를 위해 consultation_id를 id로 설정
             es_response = await save_index(consultation_id, document)

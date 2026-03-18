@@ -42,6 +42,41 @@ class ConsultationHistorySearchResponse(BaseModel):
     )
 
 
+# --- 상담 내역 목록 검색 ---
+
+class ConsultationSearchRequest(BaseModel):
+    """상담 내역 키워드+필터 검색 요청."""
+    keyword: str | None = Field(default=None, description="검색어 (요약문, 전체 대화, 상담 ID)")
+    agent_id: int | None = Field(default=None, description="담당 상담사 ID 필터")
+    date_from: str | None = Field(default=None, description="검색 시작일 (ISO 8601)")
+    date_to: str | None = Field(default=None, description="검색 종료일 (ISO 8601)")
+    final_result_code: str | None = Field(default=None, description="처리 결과 코드 필터 (DONE, TRANSFERRED 등)")
+    page: int = Field(default=1, ge=1, description="페이지 번호")
+    size: int = Field(default=10, ge=1, le=100, description="페이지 당 건수")
+
+
+class ConsultationSearchHit(BaseModel):
+    """상담 내역 검색 결과 한 건."""
+    consultation_id: int
+    summary_text: str
+    customer_id: int | None = None
+    customer_name: str | None = None
+    agent_id: int | None = None
+    agent_name: str | None = None
+    product_line_code: str | None = None
+    final_result_code: str | None = None
+    started_at: str | None = None
+    ended_at: str | None = None
+
+
+class ConsultationSearchResponse(BaseModel):
+    """상담 내역 목록 검색 응답."""
+    hits: list[ConsultationSearchHit]
+    total: int
+    page: int
+    size: int
+
+
 class CustomerPersona(BaseModel):
     """고객 페르소나 (감정/특성)."""
     sentiment: str = "NEUTRAL"
