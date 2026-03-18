@@ -19,14 +19,14 @@ async def runtime_search(question_text: str) -> RuntimeSearchResponse:
    """
    logger.info(f"상담사가 입력한 질문 텍스트: {question_text}")
 
-   expanded_query = expand_query(question_text, load_expansion_rules())
+   expanded_text = expand_query(question_text, load_expansion_rules())
 
    try:
       # 질문 텍스트 임베딩
-      vector = await embeddings.get_embedding(expanded_query)
+      vector = await embeddings.get_embedding(question_text)
 
       # ES에서 유사도 검사
-      response = await check_similarity(expanded_query, vector)
+      response = await check_similarity(expanded_text, vector)
       logger.info(f"ES 검색 결과: {response}")
       total_hits = response['hits']['total']['value']
 
