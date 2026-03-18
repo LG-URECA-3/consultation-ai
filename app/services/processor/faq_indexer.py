@@ -84,6 +84,7 @@ async def _run_faq_logic(
                 full_text=full_text,
                 product_line_code=product_line_code,
             )
+            return
         
         faq_top10 = resp["hits"]["hits"]
         
