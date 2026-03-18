@@ -12,17 +12,21 @@ def expand_query(user_query, rules):
     """
     질문 내 패턴을 감지하여 검색용 키워드를 풍성하게 확장합니다.
     """
-    expanded_terms = []
+    expanded_terms = set() # 중복 방지
+
+    rules_list = rules.get("symptom_to_state", [])
     
-    for category, content in rules.items():
+    for rule in rules_list:
+        user_slang = rule.get("user_slang", [])
+        technical_state = rule.get("technical_state", [])
         # 패턴 중 하나라도 질문에 포함되어 있다면
-        if any(pattern in user_query for pattern in content['patterns']):
-            expanded_terms.append(content['expansion'])
+        if any(slang in user_query for slang in user_slang):
+            expanded_terms.update(technical_state)
     
     # 중복 제거 및 결합
     if expanded_terms:
         # 원문과 확장 키워드를 결합하여 검색 엔진(Vector DB)에 전달
-        expansion_str = ", ".join(expanded_terms)
+        expansion_str = ", ".join(list(expanded_terms))
         return f"{user_query} ({expansion_str})"
     
     return user_query
