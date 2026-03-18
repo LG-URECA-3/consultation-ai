@@ -10,6 +10,7 @@ from app.api.routes.consultation_histories import router as consultation_histori
 from app.api.routes.runtime_api import router as runtime_router
 from app.core.config import settings
 from app.core.infrastructure import engine, es_client
+from evaluate.create_testdata import create_benchmark_data_sequential
 
 # 1. Lifespan 설정
 @asynccontextmanager
@@ -108,6 +109,15 @@ async def health_ready():
         "message": "All dependencies are available",
         "checks": checks,
     }
+
+
+@app.get("/fastapi/create-testdata")
+async def create_testdata(start_id: int = 1, limit: int = 191):
+    try:
+        await create_benchmark_data_sequential(start_id=start_id, limit=limit)
+        return {"message": f"Test data created successfully (limit: {limit})"}
+    except Exception as e:
+        return {"message": f"Test data creation failed: {e}"}
 
 
 @app.get("/fastapi")
