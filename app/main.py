@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlmodel import SQLModel
@@ -36,6 +37,14 @@ app = FastAPI(
     docs_url="/fastapi/docs",
     redoc_url="/fastapi/redoc",
     openapi_url="/fastapi/openapi.json",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https://.*\.vercel\.app|http://localhost:.*|http://127\.0\.0\.1:.*|https://.*\.ap-northeast-2\.elb\.amazonaws\.com",
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+    allow_credentials=True,
 )
 
 app.include_router(consultation_histories_router)
