@@ -7,7 +7,7 @@ from app.schemas.consultation_detail import ConsultationDetailResponse, Consulta
 from app.services.processor.es_consultation import _get_consultation_doc_from_es, CONSULTATION_HISTORIES_INDEX
 from app.core.infrastructure import es_client
 from app.crud.crud_consultation_record import get_record_detail_by_consultation_id
-from app.crud.crud_customer import get_customer_phone_mask_by_id
+from app.crud.crud_customer import get_customer_phone_mask_by_id, get_customer_name_by_id
 from app.crud.crud_user import get_user_name_by_id
 from app.core.infrastructure import AsyncSessionLocal
 
@@ -55,7 +55,9 @@ async def get_consultation_detail(consultation_id: int) -> ConsultationDetailRes
 
     async with AsyncSessionLocal() as session:
         record = await get_record_detail_by_consultation_id(session, consultation_id)
-        phone_mask = await get_customer_phone_mask_by_id(session, meta.get("customer_id")) if meta.get("customer_id") else None
+        customer_id = meta.get("customer_id")
+        phone_mask = await get_customer_phone_mask_by_id(session, customer_id) if customer_id else None
+        customer_name = await get_customer_name_by_id(session, customer_id) if customer_id else None
         agent_name = await get_user_name_by_id(session, meta.get("agent_id")) if meta.get("agent_id") else None
 
     raw_messages = src.get("messages") or []
@@ -73,7 +75,7 @@ async def get_consultation_detail(consultation_id: int) -> ConsultationDetailRes
         started_at=meta.get("started_at"),
         ended_at=meta.get("ended_at"),
         customer_id=meta.get("customer_id"),
-        customer_name=meta.get("customer_name"),
+        customer_name=customer_name,
         phone_mask=phone_mask,
         agent_id=meta.get("agent_id"),
         agent_name=agent_name,
