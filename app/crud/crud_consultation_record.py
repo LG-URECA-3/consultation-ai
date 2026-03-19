@@ -29,6 +29,16 @@ async def get_summary_text_with_keywords_by_record_id(session: AsyncSession, rec
     return SummaryKeywordResponse(summary=row['summary_text'], keywords=keywords)
     
 
+async def get_record_detail_by_consultation_id(session: AsyncSession, consultation_id: int) -> dict | None:
+    """consultation_id로 customer_request, agent_action, summary_text 조회."""
+    result = await session.execute(
+        text("SELECT customer_request, agent_action, summary_text FROM consultation_records WHERE consultation_id = :cid"),
+        {"cid": consultation_id}
+    )
+    row = result.mappings().first()
+    return dict(row) if row else None
+
+
 async def get_record_id_by_consultation_id(session: AsyncSession, consultation_id: int) -> int | None:
     """
     상담 ID로 상담 기록 ID를 비동기 조회합니다.

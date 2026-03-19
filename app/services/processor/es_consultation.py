@@ -39,7 +39,9 @@ async def setup_index_if_not_exists():
                 },
                 "metadata": {"type": "object", "properties": {
                     "customer_id": {"type": "long"},
+                    "customer_name": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
                     "agent_id": {"type": "long"},
+                    "agent_name": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
                     "channel_code": {"type": "keyword"},
                     "product_line_code": {"type": "keyword"},
                     "final_result_code": {"type": "keyword"},
