@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     FRIENDLI_BASE_URL: str = "https://api.friendli.ai/serverless/v1"
     FRIENDLI_MODEL_ID: str = "LGAI-EXAONE/EXAONE-4.0.1-32B"
 
+    # AWS Bedrock
+    AWS_BEARER_TOKEN_BEDROCK: str
+
     # DB (SSM: db_host, db_port, db_user, db_password, db_name → DATABASE_URL 구성)
     DB_HOST: Optional[str] = None
     DB_PORT: int = 3306

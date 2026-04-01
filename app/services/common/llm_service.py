@@ -1,4 +1,4 @@
-from app.core.infrastructure import client
+from app.core.infrastructure import client, claude_client
 from app.schemas.rag_response import RAGResponse
 import json
 from loguru import logger
@@ -17,7 +17,7 @@ async def llm_generate_rag_answer(current_question: str, retrieved_faqs: list[di
            (단, 검색된 문서가 질문과 완벽하게 일치하지 않아도 65% 이상 유사한 내용이 있다면 이를 기반으로 최대한 답변을 생성하십시오.)
         4. 식별자 활용: 답변을 위해 선택된 'faq_id'를 반드시 추출하여 리스트에 포함하십시오. 'faq_id'는 최대 3개까지만 포함하십시오.
         5. 답변 내용: 고객의 질문에 대하여 해결 방법이나 정확한 정보를 요약하여 작성하십시오.
-        6. 문체: 고객에게 즉시 안내할 수 있도록 친절하고 명확한 문장으로 작성하십시오. (예: ~입니다. ~됩니다. ~합니다. ~십시오.)
+        6. 문체: 고객에게 즉시 안내할 수 있도록 친절하고 명확한 문장으로 작성하십시오. (예: ~입니다. ~됩니다. ~합니다. ~십시오.) 절대 마크다운 문법을 사용하지 마십시오.
         7. 답변(answer) 길이: 최대 400자를 넘지 않게 하십시오.
 
         [출력 규칙]
@@ -27,17 +27,37 @@ async def llm_generate_rag_answer(current_question: str, retrieved_faqs: list[di
         (※ 답변이 불가능한 경우에도 질문과 가장 연관성이 높은 'faq_id'를 최대 3개까지 포함하십시오.)
     """
 
+    # xml 형식으로 추론 능력 향상
     faq_context = json.dumps(retrieved_faqs, ensure_ascii=False, indent=2)
     logger.info(f"LLM 답변 조합 진행: 참조 FAQ 리스트: {faq_context}")
+    # user_prompt = f"""
+    #     참조 FAQ 리스트: {faq_context}
+    #     현재 질문: {current_question}
+    # """
+    # return client.chat.completions.create(
+    #     model="gpt-4o",
+    #     response_model=RAGResponse,
+    #     messages=[
+    #         {"role": "system", "content": system_prompt},
+    #         {"role": "user", "content": user_prompt}],
+    #     max_tokens=500,
+    # )
+
     user_prompt = f"""
-        참조 FAQ 리스트: {faq_context}
-        현재 질문: {current_question}
+    <faq_list>
+    {faq_context}
+    </faq_list>
+
+    <question>
+    {current_question}
+    </question>
     """
-    return client.chat.completions.create(
-        model="gpt-4o",
+    return claude_client.chat.completions.create(
+        model="us.anthropic.claude-sonnet-4-20250514-v1:0",
         response_model=RAGResponse,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}],
-        max_tokens=200,
+        max_tokens=500,
+        temperature=0.1,
     )

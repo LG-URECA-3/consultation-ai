@@ -59,7 +59,7 @@ async def check_similarity(input_text: str, input_vector: list[float], k: int = 
             index=FAQ_INDEX,
             body=search_request,
         )
-        logger.info(f"ES 검색 완료! 최대 유사도: {response['hits']['total']}")
+        logger.info(f"ES 검색 완료! 검색된 유사 faq 개수: {response['hits']['total']}")
         return response
     except Exception as e:
         logger.error(f"ES 검색 실패: {e}")
